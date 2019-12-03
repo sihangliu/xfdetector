@@ -14,6 +14,7 @@ SRC_DIR := ./src
 PINTOOL_DIR := ./pintool
 
 all:
+	mkdir -p $(OBJ_DIR) $(APP_DIR) $(LIB_DIR)
 	$(CXX) -c $(CXXFLAGS) -o $(OBJ_DIR)/pmrace.o $(SRC_DIR)/pmrace.cc $(INCLUDE)
 	$(CXX) $(CXX_FLAGS) -o $(APP_DIR)/pmrace $(OBJ_DIR)/pmrace.o $(LIBRARY)
 	$(CC) -c $(CFLAGS) -o $(OBJ_DIR)/pmrace_interface.o $(SRC_DIR)/pmrace_interface.c $(INCLUDE)
@@ -23,7 +24,5 @@ all:
 	make -C pintool/
 
 clean:
-	rm -f $(OBJ_DIR)/*
-	rm -f $(APP_DIR)/*
-	rm -f $(LIB_DIR)/*
-	rm -f $(PINTOOL_DIR)/obj-intel64/*
+	rm -rf $(BUILD)
+	rm -rf $(PINTOOL_DIR)/obj-intel64/

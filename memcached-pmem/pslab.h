@@ -8,7 +8,7 @@
 
 #include <libpmem.h>
 // PMRace
-#include "../pmrace/include/pmrace_interface.h"
+#include "pmrace_interface.h"
 
 #define	PSLAB_POLICY_DRAM 0
 #define	PSLAB_POLICY_PMEM 1

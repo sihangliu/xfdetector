@@ -1,5 +1,5 @@
 #!/bin/bash
-# set -x
+set -x
 RED='\033[0;31m'
 GRN='\033[0;32m'
 NC='\033[0m' # No Color
@@ -25,12 +25,12 @@ PATCH=$3
 
 # PM Image file
 PMIMAGE=/mnt/pmem0/${WORKLOAD}
-TEST_ROOT=/home/wiper_nvdimm
+TEST_ROOT=../
 
 # variables to use
 PMRACE_EXE=${TEST_ROOT}/pmrace/build/app/pmrace
 PINTOOL_SO=${TEST_ROOT}/pmrace/pintool/obj-intel64/pintool.so
-DATASTORE_EXE=${TEST_ROOT}/workloads/hashmap/data_store
+DATASTORE_EXE=${TEST_ROOT}/driver/data_store
 PIN_EXE=${TEST_ROOT}/pin-3.10/pin
 
 TIMING_OUT=${WORKLOAD}_time.txt
@@ -42,13 +42,13 @@ fi
 
 if [[ ${WORKLOAD} =~ ^(btree|ctree|rbtree)$ ]]; then
     if [[ ${PATCH} != "" ]]; then
-        PATCH_LOC=${TEST_ROOT}/asplos20-submission/patch/${WORKLOAD}_${PATCH}.patch
+        PATCH_LOC=${TEST_ROOT}/patch/${WORKLOAD}_${PATCH}.patch
         echo "Applying bug patch: ${WORKLOAD}_${PATCH}.patch."
         cd ${TEST_ROOT}/pmdk && git apply ${PATCH_LOC} && cd ${TEST_ROOT}/pmrace || exit 1
     fi
 elif [[ ${WORKLOAD} =~ ^(hashmap_atomic|hashmap_tx)$ ]]; then
     if [[ ${PATCH} != "" ]]; then
-        PATCH_LOC=${TEST_ROOT}/asplos20-submission/patch/${WORKLOAD}_${PATCH}.patch
+        PATCH_LOC=${TEST_ROOT}/patch/${WORKLOAD}_${PATCH}.patch
         echo "Applying bug patch: ${WORKLOAD}_${PATCH}.patch."
         cd ${TEST_ROOT}/pmdk && git apply ${PATCH_LOC} && cd ${TEST_ROOT}/pmrace || exit 1
     fi
@@ -74,8 +74,8 @@ rm -f /tmp/func_map
 
 echo "Recompiling workload, suppressing make output."
 make -C ${TEST_ROOT}/pmdk > /dev/null
-make clean -C ${TEST_ROOT}/workloads/hashmap > /dev/null
-make -C ${TEST_ROOT}/workloads/hashmap > /dev/null
+make clean -C ${TEST_ROOT}/driver > /dev/null
+make -C ${TEST_ROOT}/driver > /dev/null
 
 # unapply patch
 if [[ $PATCH != "" ]]; then

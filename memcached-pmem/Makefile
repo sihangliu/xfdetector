@@ -385,7 +385,7 @@ AUTOMAKE = ${SHELL} /home/wiper_nvdimm/xfdetector/memcached-pmem/missing automak
 AWK = mawk
 CC = gcc
 CCDEPMODE = depmode=gcc3
-CFLAGS = -g -O2 -pthread -pthread -Wall -Werror -pedantic -Wmissing-prototypes -Wmissing-declarations -Wredundant-decls
+CFLAGS = -I/home/wiper_nvdimm/xfdetector/pmrace/include -pthread -pthread -Wall -Werror -pedantic -Wmissing-prototypes -Wmissing-declarations -Wredundant-decls
 CPP = gcc -E
 CPPFLAGS = 
 CYGPATH_W = echo
@@ -407,7 +407,7 @@ INSTALL_SCRIPT = ${INSTALL}
 INSTALL_STRIP_PROGRAM = $(install_sh) -c -s
 LDFLAGS = 
 LIBOBJS = 
-LIBS = -levent 
+LIBS = -levent -levent -L/home/wiper_nvdimm/xfdetector/pmrace/build/lib/ -Wl,-rpath=/home/wiper_nvdimm/xfdetector/pmrace/build/lib/ -lpmrace_interface
 LTLIBOBJS = 
 MAKEINFO = ${SHELL} /home/wiper_nvdimm/xfdetector/memcached-pmem/missing makeinfo
 MKDIR_P = /bin/mkdir -p

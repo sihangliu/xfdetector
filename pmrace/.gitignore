@@ -1,4 +1,5 @@
 .*.swp
+*.txt
 *.out
 *.tmp
 build/
