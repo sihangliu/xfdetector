@@ -1,0 +1,10 @@
+.*.swp
+*.out
+*.tmp
+build/
+*.o
+.vscode/
+obj-intel64/
+*.log
+test.cc
+out
