@@ -1,0 +1,9 @@
+*.o
+.vscode
+out
+*.so
+*.a
+*.log
+*~
+autom4te.cache/
+stamp-h1
