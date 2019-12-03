@@ -253,11 +253,11 @@ void ShadowPM::add_tx_add_addr(trace_entry_t* op_ptr, addr_t addr, size_t size){
     int tid = op_ptr->tid;
     // TODO: check for duplicate TX_ADD addresses
     if(is_non_added_write_addr(op_ptr, addr, size)){
-        cerr << "Error TX_ADD after modification. Write IP: " << std::hex << op_ptr->instr_ptr << " Write Addr: " << addr << endl;
+        cerr << "\033[0;31mBug:\033[0m TX_ADD after modification. Write IP: " << std::hex << op_ptr->instr_ptr << " Write Addr: " << addr << endl;
     }
 
     if (is_added_addr(op_ptr, addr, size)) {
-        cerr << "Unnecessary TX_ADD" << endl;
+        cerr << "\033[0;31mPerformance Bug:\033[0m Unnecessary TX_ADD" << endl;
     }
 
     DEBUG(cerr << "inserting tid: " << tid << " addr: " << addr << " size: " << size <<  endl;);
@@ -343,7 +343,7 @@ bool ShadowPM::print_look_up_write_addr_IP_mapping(trace_entry_t* op_ptr, addr_t
     int linenum;
     string filename;
     for(auto &it : MAP_LOOKUP(write_addr_IP_mapping, addr, size)){
-        fprintf(file, "\033[0;31mBug:\033[0m Associate Write IP: %p. ", (void*)it.second);
+        fprintf(file, "\033[0;31mRace Bug:\033[0m Associate Write IP: %p. ", (void*)it.second);
         while (ifs >> ip >> linenum >> filename) {
             if (std::stoul(ip, nullptr, 16) == it.second) {
                 fprintf(file, "Filename: %s, line: %d.", filename.c_str(), linenum);

@@ -1,0 +1,16 @@
+diff --git a/src/examples/libpmemobj/tree_map/ctree_map.c b/src/examples/libpmemobj/tree_map/ctree_map.c
+index 639da18d0..eb772c1f2 100644
+--- a/src/examples/libpmemobj/tree_map/ctree_map.c
++++ b/src/examples/libpmemobj/tree_map/ctree_map.c
+@@ -220,8 +220,10 @@ ctree_map_insert(PMEMobjpool *pop, TOID(struct ctree_map) map,
+ 	struct tree_map_entry e = {key, value};
+ 	TX_BEGIN(pop) {
+ 		if (p->key == 0 || p->key == key) {
+-			pmemobj_tx_add_range_direct(p, sizeof(*p));
++			// Misplace TX_ADD
++			//pmemobj_tx_add_range_direct(p, sizeof(*p));
+ 			*p = e;
++			pmemobj_tx_add_range_direct(p, sizeof(*p));
+ 		} else {
+ 			ctree_map_insert_leaf(&D_RW(map)->root, e,
+ 					find_crit_bit(p->key, key));

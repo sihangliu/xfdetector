@@ -1,0 +1,14 @@
+diff --git a/src/examples/libpmemobj/hashmap/hashmap_tx.c b/src/examples/libpmemobj/hashmap/hashmap_tx.c
+index 02349d7f0..e45f89fc7 100644
+--- a/src/examples/libpmemobj/hashmap/hashmap_tx.c
++++ b/src/examples/libpmemobj/hashmap/hashmap_tx.c
+@@ -202,7 +202,8 @@ hm_tx_insert(PMEMobjpool *pop, TOID(struct hashmap_tx) hashmap,
+ 	int ret = 0;
+ 	TX_BEGIN(pop) {
+ 		TX_ADD_FIELD(D_RO(hashmap)->buckets, bucket[h]);
+-		TX_ADD_FIELD(hashmap, count);
++		// BUG: Missing TX_ADD_FIELD
++		// TX_ADD_FIELD(hashmap, count);
+ 
+ 		TOID(struct entry) e = TX_NEW(struct entry);
+ 		D_RW(e)->key = key;

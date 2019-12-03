@@ -1,0 +1,18 @@
+diff --git a/src/examples/libpmemobj/tree_map/btree_map.c b/src/examples/libpmemobj/tree_map/btree_map.c
+index f02a74a96..cafabe601 100644
+--- a/src/examples/libpmemobj/tree_map/btree_map.c
++++ b/src/examples/libpmemobj/tree_map/btree_map.c
+@@ -198,9 +198,12 @@ btree_map_create_split_node(TOID(struct tree_map_node) node,
+ 
+ 	int c = (BTREE_ORDER / 2);
+ 	*m = D_RO(node)->items[c - 1]; /* select median item */
+-	TX_ADD(node);
++
+ 	set_empty_item(&D_RW(node)->items[c - 1]);
+ 
++	// BUG: TX_ADD wrong place
++	TX_ADD(node);
++
+ 	/* move everything right side of median to the new node */
+ 	for (int i = c; i < BTREE_ORDER; ++i) {
+ 		if (i != BTREE_ORDER - 1) {

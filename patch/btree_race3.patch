@@ -1,0 +1,14 @@
+diff --git a/src/examples/libpmemobj/tree_map/btree_map.c b/src/examples/libpmemobj/tree_map/btree_map.c
+index f02a74a96..8de7bbf92 100644
+--- a/src/examples/libpmemobj/tree_map/btree_map.c
++++ b/src/examples/libpmemobj/tree_map/btree_map.c
+@@ -160,7 +160,8 @@ static void
+ btree_map_insert_empty(TOID(struct btree_map) map,
+ 	struct tree_map_node_item item)
+ {
+-	TX_ADD_FIELD(map, root);
++	// BUG: Remove TX_ADD_FIELD
++	//TX_ADD_FIELD(map, root);
+ 	D_RW(map)->root = TX_ZNEW(struct tree_map_node);
+ 
+ 	btree_map_insert_item_at(D_RO(map)->root, 0, item);

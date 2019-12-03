@@ -1,0 +1,14 @@
+diff --git a/src/examples/libpmemobj/tree_map/ctree_map.c b/src/examples/libpmemobj/tree_map/ctree_map.c
+index 639da18d0..586b9314e 100644
+--- a/src/examples/libpmemobj/tree_map/ctree_map.c
++++ b/src/examples/libpmemobj/tree_map/ctree_map.c
+@@ -152,6 +152,9 @@ ctree_map_insert_leaf(struct tree_map_entry *p,
+ 	D_RW(new_node)->diff = diff;
+ 
+ 	int d = BIT_IS_SET(e.key, D_RO(new_node)->diff);
++	
++	// BUG: Additional pmemobj_tx_add_range_direct
++	pmemobj_tx_add_range_direct(p, sizeof(*p));
+ 
+ 	/* insert the leaf at the direction based on the critical bit */
+ 	D_RW(new_node)->entries[d] = e;

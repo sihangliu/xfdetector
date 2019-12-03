@@ -1,0 +1,14 @@
+diff --git a/src/examples/libpmemobj/tree_map/btree_map.c b/src/examples/libpmemobj/tree_map/btree_map.c
+index f02a74a96..13a81b8e8 100644
+--- a/src/examples/libpmemobj/tree_map/btree_map.c
++++ b/src/examples/libpmemobj/tree_map/btree_map.c
+@@ -241,7 +241,8 @@ btree_map_find_dest_node(TOID(struct btree_map) map,
+ 			D_RW(up)->slots[0] = n;
+ 			D_RW(up)->slots[1] = right;
+ 
+-			TX_ADD_FIELD(map, root);
++			// Remove TX_ADD_FIELD
++			// TX_ADD_FIELD(map, root);
+ 			D_RW(map)->root = up;
+ 			n = up;
+ 		}

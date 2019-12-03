@@ -1,0 +1,15 @@
+diff --git a/src/examples/libpmemobj/tree_map/rbtree_map.c b/src/examples/libpmemobj/tree_map/rbtree_map.c
+index 48a4fe671..c3119acab 100644
+--- a/src/examples/libpmemobj/tree_map/rbtree_map.c
++++ b/src/examples/libpmemobj/tree_map/rbtree_map.c
+@@ -206,6 +206,10 @@ rbtree_map_rotate(TOID(struct rbtree_map) map,
+ 
+ 	TX_SET(NODE_P(node), slots[NODE_LOCATION(node)], child);
+ 
++	// BUG: Additional TX_ADD
++	TX_ADD(node);
++	TX_ADD(child);
++
+ 	D_RW(child)->slots[c] = node;
+ 	D_RW(node)->parent = child;
+ }

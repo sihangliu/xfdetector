@@ -1,0 +1,36 @@
+diff --git a/src/examples/libpmemobj/hashmap/hashmap_atomic.c b/src/examples/libpmemobj/hashmap/hashmap_atomic.c
+index 4e137d40a..9889f240a 100644
+--- a/src/examples/libpmemobj/hashmap/hashmap_atomic.c
++++ b/src/examples/libpmemobj/hashmap/hashmap_atomic.c
+@@ -250,8 +250,6 @@ int
+ hm_atomic_insert(PMEMobjpool *pop, TOID(struct hashmap_atomic) hashmap,
+ 		uint64_t key, PMEMoid value)
+ {
+-	PMRace_addCommitVar(&D_RW(hashmap)->count_dirty, sizeof(D_RW(hashmap)->count_dirty));
+-	//fprintf(stderr ,"adding commit var\n");
+ 	TOID(struct buckets) buckets = D_RO(hashmap)->buckets;
+ 	TOID(struct entry) var;
+ 
+@@ -264,10 +262,12 @@ hm_atomic_insert(PMEMobjpool *pop, TOID(struct hashmap_atomic) hashmap,
+ 		num++;
+ 	}
+ 
+-	D_RW(hashmap)->count_dirty = 1;
++	// BUG: persist before update. Also a performance bug
+ 	pmemobj_persist(pop, &D_RW(hashmap)->count_dirty,
+ 			sizeof(D_RW(hashmap)->count_dirty));
+ 
++	D_RW(hashmap)->count_dirty = 1;
++
+ 	struct entry_args args;
+ 	args.key = key;
+ 	args.value = value;
+@@ -457,7 +457,7 @@ hm_atomic_init(PMEMobjpool *pop, TOID(struct hashmap_atomic) hashmap)
+ {
+ 	srand(D_RO(hashmap)->seed);
+ 
+-	//fprintf(stderr ,"Initing\n");
++	PMRace_addCommitVar(&D_RO(hashmap)->count_dirty, sizeof(D_RO(hashmap)->count_dirty));
+ 	//PMRace_addCommitVar(&D_RO(hashmap)->count, sizeof(D_RO(hashmap)->count));
+ 
+ 	/* handle rebuild interruption */

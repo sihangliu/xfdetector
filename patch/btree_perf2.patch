@@ -1,0 +1,13 @@
+diff --git a/src/examples/libpmemobj/tree_map/btree_map.c b/src/examples/libpmemobj/tree_map/btree_map.c
+index f02a74a96..62cb0ff6b 100644
+--- a/src/examples/libpmemobj/tree_map/btree_map.c
++++ b/src/examples/libpmemobj/tree_map/btree_map.c
+@@ -149,6 +149,8 @@ static void
+ btree_map_insert_item_at(TOID(struct tree_map_node) node, int pos,
+ 	struct tree_map_node_item item)
+ {
++	// BUG: Additional TX_ADD
++	TX_ADD(node);
+ 	D_RW(node)->items[pos] = item;
+ 	D_RW(node)->n += 1;
+ }

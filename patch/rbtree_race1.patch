@@ -1,0 +1,15 @@
+diff --git a/src/examples/libpmemobj/tree_map/rbtree_map.c b/src/examples/libpmemobj/tree_map/rbtree_map.c
+index 48a4fe671..26484381d 100644
+--- a/src/examples/libpmemobj/tree_map/rbtree_map.c
++++ b/src/examples/libpmemobj/tree_map/rbtree_map.c
+@@ -229,8 +229,8 @@ rbtree_map_insert_bst(TOID(struct rbtree_map) map, TOID(struct tree_map_node) n)
+ 	}
+ 
+ 	TX_SET(n, parent, parent);
+-
+-	pmemobj_tx_add_range_direct(dst, sizeof(*dst));
++	// Missing tx add
++	//pmemobj_tx_add_range_direct(dst, sizeof(*dst));
+ 	*dst = n;
+ }
+ 
