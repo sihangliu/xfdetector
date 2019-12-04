@@ -40,55 +40,11 @@ The following is a list of requirements:
 Please refer to Intel's [guide](https://software.intel.com/en-us/articles/quick-start-guide-configure-intel-optane-dc-persistent-memory-on-linux) to initialize DC persistent memory in App Direct mode. In the rest of this documentation, we assume the PM device is mounted on `/mnt/pmem0`.
 
 #### Emulated PM system
-* CPU: Intel 1st/2nd Generation Xeon Scalable, or Skylake-X Processor.
-(As far as we know, they are the only Intel processors that supports the CLWB instruction)
+* CPU: Intel 1st/2nd Generation Xeon Scalable Processor
 * Memory: at least DDR4 32GB (16GB of which will be emulated as PM)
 
-Steps for PM emulation (Assuming that the system has a minimum of 32GB of DRAM):  
-1. Create "PM" Device:
-	Edit `/etc/default/grub` with sudo privilege, and add the following line to the end of the file:
-	```
-	GRUB_CMDLINE_LINUX="memmap=16G!16G"
-	```
-
-	Save the changes and execute:
-	```
-	# update-grub2
-	```
-
-2. After reboot, you shall see a new "PM" device: `/dev/pmem0`
-
-3. Mount the "PM" device:
-
-	First, format `/dev/pmem0` as EXT4:
-	```
-	# mkfs.ext4 -F /dev/pmem0
-	```
-
-	Then create a mounting point. We will be using `pmem0` in the rest of this documentation:
-	```
-	# mkdir /mnt/pmem0
-	```
-
-	Mount the device to the mounting point with DAX option:
-	```
-	# mount -o dax /dev/pmem0 /mnt/pmem0
-	```
-
-   Confirm the DAX option is successfully enabled:
-    ```
-	$ mount | grep dax
-	```
-
-   You should see something similar to: `/dev/pmem0 on /mnt/pmem0 type ext4 (rw,relatime,dax)`  
-   To access the newly created PM device without sudo privilege, change the ownership to your own username:
-	```
-	# chown -R <username> /mnt/pmem0
-	```
-
-  Note that the emulated PM device will disappear every time system restarts. So you will need to *execute the steps in (3) every time the system boots*. 
-For more details about emulating PM, please refer to PMDK's [documentation](https://pmem.io/2016/02/22/pm-emulation.html).
-
+Steps for PM emulation can be found at [PMDK's website](https://pmem.io/2016/02/22/pm-emulation.html).
+We have tested XFDetector on a system with real PM. There can be unexpected behavior in emulated systems. 
 
 ### Software Dependencies
 The following is a list of software dependencies for XFDetector and test workloads (the listed versions have been tested, other versions might work but not guaranteed):   
@@ -120,8 +76,8 @@ The followings are the detailed instructions to build XFDetector and workloads s
 
 ### Build XFDetector
 ```
-$ cd pmrace/
-$ export PIN_ROOT=$(pwd)/pin-3.10
+$ cd xfdetector/
+$ export PIN_ROOT=<XFDetector Root>/pin-3.10
 $ export PATH=$PATH:$PIN_ROOT
 $ make
 ```
