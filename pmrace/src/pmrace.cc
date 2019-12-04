@@ -303,15 +303,15 @@ interval_set_addr ShadowPM::get_tx_added_addr(int tid)
 
 void ShadowPM::add_commit_var_addr(trace_entry_t* op_ptr, addr_t addr, size_t size)
 {
-    cerr << "inserting commit var addr: " << addr << " size: " << size <<  endl;
+    // cerr << "inserting commit var addr: " << addr << " size: " << size <<  endl;
     DEBUG(cerr << "inserting commit var addr: " << addr << " size: " << size <<  endl;);
     SET_INSERT(commit_var_set_addr, addr, size);
 }
 
 bool ShadowPM::is_commit_var_addr(trace_entry_t* op_ptr, addr_t addr, size_t size){
     
-    if (SET_LOOKUP(commit_var_set_addr, addr, size))
-        cerr << "Lookup found" << endl;
+    // if (SET_LOOKUP(commit_var_set_addr, addr, size))
+    //     cerr << "Lookup found" << endl;
     
     return SET_LOOKUP(commit_var_set_addr, addr, size);
 }
@@ -327,9 +327,9 @@ bool ShadowPM::is_recent_commit_update(trace_entry_t* op_ptr, addr_t addr, size_
     if(commit_timestamp < 0){
         return true;
     }
-    if (commit_timestamp <= maxTimeStamp) {
-        cerr << "Addr: " << std::hex << addr << std::dec << " TS: " << maxTimeStamp << endl;
-    }
+    // if (commit_timestamp <= maxTimeStamp) {
+    //     cerr << "Addr: " << std::hex << addr << std::dec << " TS: " << maxTimeStamp << endl;
+    // }
     return commit_timestamp > maxTimeStamp;
 }
 

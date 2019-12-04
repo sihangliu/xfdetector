@@ -34,7 +34,7 @@ TEST_ROOT=../
 # variables to use
 PMRACE_EXE=${TEST_ROOT}/pmrace/build/app/pmrace
 PINTOOL_SO=${TEST_ROOT}/pmrace/pintool/obj-intel64/pintool.so
-DATASTORE_EXE=${TEST_ROOT}/driver/data_store
+DATASTORE_EXE=${TEST_ROOT}/driver/data_store_hash
 PIN_EXE=${TEST_ROOT}/pin-3.10/pin
 
 TIMING_OUT=${WORKLOAD}_${TESTSIZE}_time.txt
@@ -94,7 +94,7 @@ MAX_TIMEOUT=2000
 
 # Init the pmImage
 # ${DATASTORE_EXE} ${WORKLOAD} ${PMIMAGE} ${TESTSIZE}
-${DATASTORE_EXE} ${WORKLOAD} ${PMIMAGE} 1
+${DATASTORE_EXE} ${WORKLOAD} ${PMIMAGE} 2
 # Run realworkload
 # Start PMRace
 echo -e "${GRN}Info:${NC} We kill the post program after running some time, so don't panic if you see a process gets killed."
