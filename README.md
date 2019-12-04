@@ -9,8 +9,10 @@
   * [Build XFDetector](#build-xfdetector)
   * [Build Test Workloads](#build-test-workloads)
 * [Testing and Reproducing Bugs](#testing-and-reproducing-bugs)
-
-
+  * [PMDK Examples](#pmdk-examples)
+  * [Redis](#redis)
+  * [Memcached](#memcached)
+  * [Testing Other Workloads](#testing-other-workloads)
 ## Introduction to XFDetector
 Persistent memory (PM) technologies, such as Intel's Optane memory, deliver high performance, byte-addressability and persistence, allowing program to directly manipulate persistent data in memory without OS overhead. 
 An important requirement of these programs is that persistent data must remain consistent across a failure, which we refer to as the crash consistency guarantee.
@@ -197,3 +199,34 @@ Use script `pmrace/runMemcached.sh` to run Memcached examples. The usage is as f
 Usage: ./runMemcached.sh TESTSIZE
 	TESTSIZE:   The size of workload to test.
 ```
+
+### Testing Other Workloads
+The interface from PMRace for annotation is defined in `include/pmrace_interface.h`.
+In these functions, 
+field `condition` is a boolean option that enables/disables this function and 
+field `stage` can be `PRE_FAILURE`, `POST_FAILURE` or `PRE_FAILURE|POST_FAILURE` (both). 
+
+
+* Select region-of-interest for testing:
+```
+void PMRace_RoIBegin(int condition, int stage);
+void PMRace_RoIEnd(int condition, int stage);
+```
+
+* Terminate testing (kill the process):
+```
+void PMRace_complete(int condition, int stage);
+```
+
+* Add commit variable to detect cross-failure semantic bugs:   
+Field `var` is the pointer to the selected commit variable, and field `size` is the size of the commit variable.
+```
+void PMRace_addCommitVar(const void* var, unsigned size);
+```
+<!-- 
+* Annotate your own PM libraries:
+A pair of the following functions select a code region that skips detection.
+```
+void skipDetectionBegin(int condition, int stage);
+void skipDetectionEnd(int condition, int stage);
+``` -->
