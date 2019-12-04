@@ -267,17 +267,21 @@ void print_IP_linenumber_mapping(addr_t writeip)
     ifs.close();
 }
 
-void ShadowPM::add_tx_add_addr(trace_entry_t* op_ptr, addr_t addr, size_t size){
+void ShadowPM::add_tx_add_addr(trace_entry_t* op_ptr, addr_t addr, size_t size, int stage){
     int tid = op_ptr->tid;
     // TODO: check for duplicate TX_ADD addresses
     if(is_non_added_write_addr(op_ptr, addr, size)){
-        cerr << "\033[0;31mConsistency Bug:\033[0m TX_ADD after modification. Write IP: " << std::hex << op_ptr->instr_ptr << " Write Addr: " << addr << endl;
-        print_IP_linenumber_mapping(op_ptr->instr_ptr);
+        if (stage == PRE_FAILURE) {
+            cerr << "\033[0;31mConsistency Bug:\033[0m TX_ADD after modification. Write IP: " << std::hex << op_ptr->instr_ptr << " Write Addr: " << addr << endl;
+            print_IP_linenumber_mapping(op_ptr->instr_ptr);
+        }
     }
 
     if (is_added_addr(op_ptr, addr, size)) {
-        cerr << "\033[1;33mPerformance Bug:\033[0m Unnecessary TX_ADD" << endl;
-        print_IP_linenumber_mapping(op_ptr->instr_ptr);
+        if (stage == PRE_FAILURE) {
+            cerr << "\033[1;33mPerformance Bug:\033[0m Unnecessary TX_ADD" << endl;
+            print_IP_linenumber_mapping(op_ptr->instr_ptr);
+        }
     }
 
     DEBUG(cerr << "inserting tid: " << tid << " addr: " << addr << " size: " << size <<  endl;);
@@ -867,12 +871,12 @@ void PMRaceDetector::update_pm_status(int stage, ShadowPM* shadow_mem, trace_ent
                 shadow_mem->remove_pm_addr(cur_trace, src_addr, size);
                 break;
             case PM_TRACE_TX_ADDR_ADD:
-                if(stage == POST_FAILURE){
+                // if(stage == POST_FAILURE){
                     // shadow_mem->set_consistent_addr(cur_trace, dst_addr, size);
-                }
-                if (stage == PRE_FAILURE) {
-                    shadow_mem->add_tx_add_addr(cur_trace, dst_addr, size);
-                }
+                // }
+                // if (stage == PRE_FAILURE) {
+                shadow_mem->add_tx_add_addr(cur_trace, dst_addr, size, stage);
+                // }
                 break;
             case PM_TRACE_TX_BEGIN:
                 shadow_mem->increment_tx_level(tid);

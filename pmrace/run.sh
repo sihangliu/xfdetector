@@ -75,9 +75,10 @@ rm -f /tmp/*fifo
 rm -f /tmp/func_map
 
 echo "Recompiling workload, suppressing make output."
-make -C ${TEST_ROOT}/pmdk #> /dev/null
-make clean -C ${TEST_ROOT}/driver #> /dev/null
-make -C ${TEST_ROOT}/driver #> /dev/null
+make clean -C ${TEST_ROOT}/pmdk/src/examples -j > /dev/null
+make -C ${TEST_ROOT}/pmdk/src/examples EXTRA_CFLAGS="-Wno-error" -j > /dev/null
+make clean -C ${TEST_ROOT}/driver > /dev/null
+make -C ${TEST_ROOT}/driver > /dev/null
 
 # unapply patch
 if [[ $PATCH != "" ]]; then
@@ -89,7 +90,7 @@ MAX_TIMEOUT=2000
 
 # Init the pmImage
 # ${DATASTORE_EXE} ${WORKLOAD} ${PMIMAGE} ${TESTSIZE}
-#${DATASTORE_EXE} ${WORKLOAD} ${PMIMAGE} 1
+${DATASTORE_EXE} ${WORKLOAD} ${PMIMAGE} 1
 # Run realworkload
 # Start PMRace
 echo -e "${GRN}Info:${NC} We kill the post program after running some time, so don't panic if you see a process gets killed."

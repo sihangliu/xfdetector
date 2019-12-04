@@ -151,7 +151,7 @@ public:
 
     bool is_added_addr(trace_entry_t*, addr_t, size_t);
     bool is_non_added_write_addr(trace_entry_t*, addr_t, size_t);
-    void add_tx_add_addr(trace_entry_t*, addr_t, size_t);
+    void add_tx_add_addr(trace_entry_t*, addr_t, size_t, int);
     void add_non_tx_add_addr(trace_entry_t*, addr_t, size_t);
     interval_set_addr get_tx_added_addr(int tid);
     void add_commit_var_addr(trace_entry_t* op_ptr, addr_t addr, size_t size);
