@@ -33,7 +33,7 @@ PINTOOL_SO=${TEST_ROOT}/pmrace/pintool/obj-intel64/pintool.so
 DATASTORE_EXE=${TEST_ROOT}/driver/data_store
 PIN_EXE=${TEST_ROOT}/pin-3.10/pin
 
-TIMING_OUT=${WORKLOAD}_time.txt
+TIMING_OUT=${WORKLOAD}_${TESTSIZE}_time.txt
 DEBUG_OUT=${WORKLOAD}_${TESTSIZE}_debug.txt
 
 if ! [[ $TESTSIZE =~ ^[0-9]+$ ]] ; then
@@ -42,15 +42,17 @@ fi
 
 if [[ ${WORKLOAD} =~ ^(btree|ctree|rbtree)$ ]]; then
     if [[ ${PATCH} != "" ]]; then
+        WORKLOAD_LOC=${TEST_ROOT}/pmdk/src/examples/libpmemobj/tree_map/${WORKLOAD}_map.c
         PATCH_LOC=${TEST_ROOT}/patch/${WORKLOAD}_${PATCH}.patch
         echo "Applying bug patch: ${WORKLOAD}_${PATCH}.patch."
-        cd ${TEST_ROOT}/pmdk && git apply ${PATCH_LOC} && cd ${TEST_ROOT}/pmrace || exit 1
+        patch ${WORKLOAD_LOC} < ${PATCH_LOC} || exit 1
     fi
 elif [[ ${WORKLOAD} =~ ^(hashmap_atomic|hashmap_tx)$ ]]; then
     if [[ ${PATCH} != "" ]]; then
+        WORKLOAD_LOC=${TEST_ROOT}/pmdk/src/examples/libpmemobj/hashmap/${WORKLOAD}.c
         PATCH_LOC=${TEST_ROOT}/patch/${WORKLOAD}_${PATCH}.patch
         echo "Applying bug patch: ${WORKLOAD}_${PATCH}.patch."
-        cd ${TEST_ROOT}/pmdk && git apply ${PATCH_LOC} && cd ${TEST_ROOT}/pmrace || exit 1
+        patch ${WORKLOAD_LOC} < ${PATCH_LOC} || exit 1
     fi
 else
     echo -e "${RED}Error:${NC} Invalid workload name ${WORKLOAD}." >&2; usage; exit 1
@@ -73,20 +75,20 @@ rm -f /tmp/*fifo
 rm -f /tmp/func_map
 
 echo "Recompiling workload, suppressing make output."
-make -C ${TEST_ROOT}/pmdk > /dev/null
-make clean -C ${TEST_ROOT}/driver > /dev/null
-make -C ${TEST_ROOT}/driver > /dev/null
+make -C ${TEST_ROOT}/pmdk #> /dev/null
+make clean -C ${TEST_ROOT}/driver #> /dev/null
+make -C ${TEST_ROOT}/driver #> /dev/null
 
 # unapply patch
 if [[ $PATCH != "" ]]; then
     echo "Reverting patch: ${WORKLOAD}_${PATCH}.patch."
-    cd ${TEST_ROOT}/pmdk && git apply -R ${PATCH_LOC} && cd ${TEST_ROOT}/pmrace || exit 1
+    patch -R ${WORKLOAD_LOC} < ${PATCH_LOC} || exit 1
 fi
 
 MAX_TIMEOUT=2000
 
 # Init the pmImage
-${DATASTORE_EXE} ${WORKLOAD} ${PMIMAGE} ${TESTSIZE}
+# ${DATASTORE_EXE} ${WORKLOAD} ${PMIMAGE} ${TESTSIZE}
 #${DATASTORE_EXE} ${WORKLOAD} ${PMIMAGE} 1
 # Run realworkload
 # Start PMRace

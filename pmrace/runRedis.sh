@@ -3,42 +3,53 @@ set -x
 
 # Workload
 WORKLOAD=redis
+TESTSIZE=$1
+
 # PM Image file
-PMIMAGE=/mnt/pmem0/"$WORKLOAD"
+PMIMAGE=/mnt/pmem0/${WORKLOAD}
 TEST_ROOT="$PWD"/..
 
+# variables to use
+PMRACE_EXE=${TEST_ROOT}/pmrace/build/app/pmrace
+PINTOOL_SO=${TEST_ROOT}/pmrace/pintool/obj-intel64/pintool.so
+REDIS_SERVER=${TEST_ROOT}/redis-nvml/src/redis-server
+REDIS_TEST=${TEST_ROOT}/script/redis_test.sh
+REDIS_TEST_POST=${TEST_ROOT}/script/redis_test_post.sh
+PIN_EXE=${TEST_ROOT}/pin-3.10/pin
+
+if ! [[ $TESTSIZE =~ ^[0-9]+$ ]] ; then
+   echo -e "${RED}Error:${NC} Invalid workload size ${TESTSIZE}." >&2; usage; exit 1
+fi
+
+echo Running ${WORKLOAD}. Test size = ${TESTSIZE}.
 
 # Remove old pmimage and fifo files
-rm /mnt/pmem0/*
+rm -f /mnt/pmem0/*
 rm /tmp/*fifo
+rm -f /tmp/func_map
 
-# Sizes of the workloads
-TESTSIZES=(1)
+TIMING_OUT=${WORKLOAD}_${TESTSIZE}_time.txt
+DEBUG_OUT=${WORKLOAD}_${TESTSIZE}_debug.txt
 
-for i in ${TESTSIZES[@]} ; do
-	TIMING_OUT="$WORKLOAD"_time.txt
-	echo "$WORKLOAD" size: "$i" >> $TIMING_OUT
-	DEBUG_OUT="$WORKLOAD"_"$i"_debug.txt
-	echo "$WORKLOAD" size: "$i" >> $DEBUG_OUT
-	echo "runningTestSize $i"
-	# Init the pmImage
-	"$TEST_ROOT"/redis-nvml/src/redis-server "$TEST_ROOT"/redis-nvml/redis.conf pmfile $PMIMAGE 8mb & (sleep 5 ; ./redis_test.sh $i 7)
-	wait
- 	# Generate config file
- 	CONFIG_FILE="$WORKLOAD"_config_"$i".txt
- 	rm $CONFIG_FILE
- 	echo "PINTOOL_PATH $TEST_ROOT/pmrace/pintool/obj-intel64/pintool.so" >> $CONFIG_FILE
- 	echo "EXEC_PATH $TEST_ROOT/redis-nvml/src/redis-server" >> $CONFIG_FILE
- 	echo "PM_IMAGE $PMIMAGE" >> $CONFIG_FILE
- 	echo "PRE_FAILURE_COMMAND $TEST_ROOT/redis-nvml/src/redis-server $TEST_ROOT/redis-nvml/redis.conf pmfile $PMIMAGE 8mb" >> $CONFIG_FILE
- 	# The post-failure program should self-terminate without any input from the client.
- 	echo "POST_FAILURE_COMMAND $TEST_ROOT/redis-nvml/src/redis-server $TEST_ROOT/redis-nvml/redis_post.conf pmfile $PMIMAGE 8mb & (sleep 10 ; ./redis_test_post.sh $i 8) ; wait" >> $CONFIG_FILE
- 	# Run realworkload
- 	# Start PMRace
- 	./build/app/pmrace $CONFIG_FILE >> $TIMING_OUT 2> $DEBUG_OUT &
- 	sleep 1
- 	pin -t "$TEST_ROOT"/pmrace/pintool/obj-intel64/pintool.so -t 1 -f 1 -- $TEST_ROOT/redis-nvml/src/redis-server $TEST_ROOT/redis-nvml/redis.conf pmfile $PMIMAGE 8mb > /dev/null &
- 	sleep 10
- 	./redis_test.sh $i 9
- 	wait
-done
+# Generate config file
+CONFIG_FILE=${WORKLOAD}_${TESTSIZE}_config.txt
+rm ${CONFIG_FILE}
+echo "PINTOOL_PATH ${PINTOOL_SO}" >> ${CONFIG_FILE}
+echo "EXEC_PATH ${REDIS_SERVER}" >> ${CONFIG_FILE}
+echo "PM_IMAGE ${PMIMAGE}" >> ${CONFIG_FILE}
+echo "PRE_FAILURE_COMMAND ${REDIS_SERVER} ${TEST_ROOT}/redis-nvml/redis.conf pmfile ${PMIMAGE} 8mb" >> ${CONFIG_FILE}
+# The post-failure program should self-terminate without any input from the client.
+echo "POST_FAILURE_COMMAND ${REDIS_SERVER} ${TEST_ROOT}/redis-nvml/redis_post.conf pmfile ${PMIMAGE} 8mb & (sleep 10 ; ${REDIS_TEST_POST} ${TESTSIZE} 8) ; wait" >> ${CONFIG_FILE}
+
+# Init the pmImage
+${REDIS_SERVER} ${TEST_ROOT}/redis-nvml/redis.conf pmfile ${PMIMAGE} 8mb & (sleep 5 ; ${REDIS_TEST} ${TESTSIZE} 7)
+wait
+
+# Run realworkload
+# Start PMRace
+${PMRACE_EXE} ${CONFIG_FILE} >> ${TIMING_OUT} 2> ${DEBUG_OUT} &
+sleep 1
+${PIN_EXE} -t ${PINTOOL_SO} -t 1 -f 1 -- ${REDIS_SERVER} ${TEST_ROOT}/redis-nvml/redis.conf pmfile ${PMIMAGE} 8mb > /dev/null &
+sleep 10
+${REDIS_TEST} ${TESTSIZE} 9
+wait

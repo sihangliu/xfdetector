@@ -249,15 +249,35 @@ bool ShadowPM::is_non_added_write_addr(trace_entry_t* op_ptr, addr_t addr, size_
     //TODO: Need check
     return SET_LOOKUP(tx_non_added_write_addr[tid], addr, size);
 }
+
+void print_IP_linenumber_mapping(addr_t writeip)
+{
+    ifstream ifs;
+    ifs.open("/tmp/func_map", std::ios::in | std::ios::binary);
+    string ip;
+    int linenum;
+    string filename;
+    
+    while (ifs >> ip >> linenum >> filename) {
+        if (std::stoul(ip, nullptr, 16) == writeip) {
+            fprintf(stderr, "  Filename: %s, line: %d.\n", filename.c_str(), linenum);
+            break;
+        }
+    }
+    ifs.close();
+}
+
 void ShadowPM::add_tx_add_addr(trace_entry_t* op_ptr, addr_t addr, size_t size){
     int tid = op_ptr->tid;
     // TODO: check for duplicate TX_ADD addresses
     if(is_non_added_write_addr(op_ptr, addr, size)){
-        cerr << "\033[0;31mBug:\033[0m TX_ADD after modification. Write IP: " << std::hex << op_ptr->instr_ptr << " Write Addr: " << addr << endl;
+        cerr << "\033[0;31mConsistency Bug:\033[0m TX_ADD after modification. Write IP: " << std::hex << op_ptr->instr_ptr << " Write Addr: " << addr << endl;
+        print_IP_linenumber_mapping(op_ptr->instr_ptr);
     }
 
     if (is_added_addr(op_ptr, addr, size)) {
-        cerr << "\033[0;31mPerformance Bug:\033[0m Unnecessary TX_ADD" << endl;
+        cerr << "\033[1;33mPerformance Bug:\033[0m Unnecessary TX_ADD" << endl;
+        print_IP_linenumber_mapping(op_ptr->instr_ptr);
     }
 
     DEBUG(cerr << "inserting tid: " << tid << " addr: " << addr << " size: " << size <<  endl;);
@@ -323,37 +343,18 @@ void ShadowPM::add_write_addr_IP_mapping(trace_entry_t* op_ptr){
     MAP_UPDATE(write_addr_IP_mapping, addr, size, instr_ptr);
 }
 
-void print_IP_linenumber_mapping(addr_t writeip, FILE *file)
-{
-    
-    
-    
-
-}
-
 bool ShadowPM::print_look_up_write_addr_IP_mapping(trace_entry_t* op_ptr, addr_t addr, size_t size, FILE* file)
 {
     bool isWriteAddrFound = false;
     assert(op_ptr->operation == READ);
     assert(addr && size);
     //cerr << write_addr_IP_mapping << endl;
-    ifstream ifs;
-    ifs.open("/tmp/func_map", std::ios::in | std::ios::binary);
-    string ip;
-    int linenum;
-    string filename;
+    
     for(auto &it : MAP_LOOKUP(write_addr_IP_mapping, addr, size)){
-        fprintf(file, "\033[0;31mRace Bug:\033[0m Associate Write IP: %p. ", (void*)it.second);
-        while (ifs >> ip >> linenum >> filename) {
-            if (std::stoul(ip, nullptr, 16) == it.second) {
-                fprintf(file, "Filename: %s, line: %d.", filename.c_str(), linenum);
-                break;
-            }
-        }
-        fprintf(file, "\n");
+        fprintf(file, "\033[0;31mConsistency Bug:\033[0m Associate Write IP: %p.\n", (void*)it.second);
+        print_IP_linenumber_mapping(it.second);
         isWriteAddrFound = true;
     }
-    ifs.close();
     return isWriteAddrFound;
 }
 
@@ -869,7 +870,9 @@ void PMRaceDetector::update_pm_status(int stage, ShadowPM* shadow_mem, trace_ent
                 if(stage == POST_FAILURE){
                     // shadow_mem->set_consistent_addr(cur_trace, dst_addr, size);
                 }
-                shadow_mem->add_tx_add_addr(cur_trace, dst_addr, size);
+                if (stage == PRE_FAILURE) {
+                    shadow_mem->add_tx_add_addr(cur_trace, dst_addr, size);
+                }
                 break;
             case PM_TRACE_TX_BEGIN:
                 shadow_mem->increment_tx_level(tid);

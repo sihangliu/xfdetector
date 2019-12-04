@@ -155,8 +155,8 @@ int main(int argc, const char *argv[]) {
 	}
 
 	PMEMobjpool *pop;
-	srand((unsigned)time(NULL));
-//    srand(0);
+//	srand((unsigned)time(NULL));
+    srand(0);
 
 	if (file_exists(path) != 0) {
 		if ((pop = pmemobj_create(path, POBJ_LAYOUT_NAME(data_store),
@@ -180,17 +180,8 @@ int main(int argc, const char *argv[]) {
 		perror("cannot allocate map context\n");
 		return 1;
 	}
-	//exit(0);
-	// TODO Do not destroy existing map.
 	int aborted = 0;
-	// delete the map if it exists
 	if (map_check(mapc, D_RW(root)->map)){
-		/*
-		if(map_create(mapc, &D_RW(root)->map, NULL)){
-			aborted = 1;
-		}
-		*/
-		
 		TX_BEGIN(pop){
 			map_create(mapc, &D_RW(root)->map, NULL);
 		} TX_ONABORT {
@@ -204,28 +195,11 @@ int main(int argc, const char *argv[]) {
 		fprintf(stderr, "cannot create map\n");
 		return -1;
 	}
-	/* insert random items in a transaction */
-	/*
-	for (int i = 0; i < nops; ++i) {
-		// new_store_item is transactional!
-		if(map_insert(mapc, D_RW(root)->map, rand(),
-				new_store_item().oid)){
-			aborted=1;
-			break;
-		}
-	}
-	if (aborted){
-		fprintf(stderr, "error inserting items\n");
-		return -1;
-	}
-	*/
 	for (int i = 0; i < nops; ++i) {
 		TX_BEGIN(pop){
-			
-				// new_store_item is transactional!
-				map_insert(mapc, D_RW(root)->map, rand(),
-						new_store_item().oid);
-						PMRace_addFailurePoint(TRACING);
+			map_insert(mapc, D_RW(root)->map, rand(),
+					new_store_item().oid);
+					PMRace_addFailurePoint(TRACING);
 		} TX_ONABORT {
 			perror("transaction aborted\n");
 			map_ctx_free(mapc);
