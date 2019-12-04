@@ -2,9 +2,10 @@
 
 ## Table of Contents
 * [Introduction to XFDetector](#introduction-to-xfdetector)
-* [Installation](#installation)
+* [Prerequisites](#prerequisites)
   * [Hardware Dependencies](#hardware-dependencies)
   * [Software Dependencies](#software-dependencies)
+* [Installation](#installation)
   * [Build XFDetector](#build-xfdetector)
   * [Build Test Workloads](#build-test-workloads)
 * [Testing and Reporducing Bugs](#testing-and-reproducing-bugs)
@@ -24,14 +25,7 @@ Together, we call these *cross-failure bugs*.
 In this work, we propose XFDetector, a tool that detects cross-failure bugs by considering failures injected at all ordering points in pre-failure execution and checking for cross-failure races and cross-failure semantic bugs in the post-failure continuation.
 XFDetector has detected four new bugs in three pieces of PM software: one of PMDK examples, a PM-optimized Redis database and a  PMDK library function.
 
-
-## Installation
-This repository is organized as the following structure:
-* `xfdetector/`: The source code of our tool.
-* `pmdk/`: Intel's [PMDK](https://pmem.io/) library, including its example PM programs.
-* `redis-nvml/`: A Redis implementation (from [Intel](https://github.com/pmem/redis/tree/3.2-nvml)) based on PMDK (PMDK was previously named as NVML).
-* `memcached-pmem/`: A Memcached implementation (from [Lenovo](https://github.com/lenovo/memcached-pmem)) based on Intel's PMDK library. 
-* `patch/`: Patches for reproducing bugs and trying our tool
+## Prerequisites
 
 ### Hardware Dependencies
 XFDetector targets workloads that directly manage the persistent data on PM through a DAX file system. To support these workloads, the hardware needs to provide a persistent memory device, either by using real PM (Intel Optane DC Persistent Memory) or emulating PM with DRAM. To enable efficient writeback of persistent data, the processor also requires the CLWB instrcution in both real and emulated platforms. 
@@ -95,3 +89,43 @@ The following is a list of software dependencies for XFDetector and test workloa
 
 Other dependent libraries for the workloads are contained in this repository. 
 
+## Installation
+This repository is organized as the following structure:
+* `xfdetector/`: The source code of our tool.
+* `pmdk/`: Intel's [PMDK](https://pmem.io/) library, including its example PM programs.
+* `redis-nvml/`: A Redis implementation (from [Intel](https://github.com/pmem/redis/tree/3.2-nvml)) based on PMDK (PMDK was previously named as NVML).
+* `memcached-pmem/`: A Memcached implementation (from [Lenovo](https://github.com/lenovo/memcached-pmem)) based on Intel's PMDK library. 
+* `patch/`: Patches for reproducing bugs and trying our tool
+
+This repository provides a Makefile that compiles both XFDetector and test workloads under the root folder. Simply 
+   $ cd xfdetector
+   $ make
+
+The followings are the detailed instructions to build XFDetector and workloads separately. 
+
+### Build XFDetector
+
+XFDetector uses PIN to track instructions from the programs. Export the following environment variables before installation:
+
+
+
+### Build Test Workloads
+
+#### PMDK
+1. Compile our annotated PMDK (based on PMDK-1.6):   
+
+		$ cd pmdk/
+		$ make/
+
+2. Install the compiled PMDK (require sudo privilege):
+	
+		# make install
+
+#### Redis
+
+
+#### Memcached
+1. Configure the Memcached using the following command. The variable `LIBS` and `CFLAGS` include the XFDetector's interface and the option `--enable-pslab` enables PM as persistent storage. 
+
+		#  env LIBS='-levent -L../pmrace/build/lib/ -Wl,-rpath=../pmrace/build/lib/ -lpmrace_interface' CFLAGS='-I../pmrace/include' ./configure --enable-pslab
+		
