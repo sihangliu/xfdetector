@@ -62,13 +62,13 @@
 /* #undef HAVE_PLEDGE */
 
 /* we have sasl_callback_ft */
-#define HAVE_SASL_CALLBACK_FT 1
+/* #undef HAVE_SASL_CALLBACK_FT */
 
 /* Set to nonzero if your SASL implementation supports SASL_CB_GETCONF */
 /* #undef HAVE_SASL_CB_GETCONF */
 
 /* Define to 1 if you have the <sasl/sasl.h> header file. */
-#define HAVE_SASL_SASL_H 1
+/* #undef HAVE_SASL_SASL_H */
 
 /* Define to 1 if you have the `setppriv' function. */
 /* #undef HAVE_SETPPRIV */

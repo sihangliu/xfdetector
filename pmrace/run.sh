@@ -31,11 +31,6 @@ PATCH=$3
 PMIMAGE=/mnt/pmem0/${WORKLOAD}
 TEST_ROOT=../
 
-# variables to use
-PMRACE_EXE=${TEST_ROOT}/pmrace/build/app/pmrace
-PINTOOL_SO=${TEST_ROOT}/pmrace/pintool/obj-intel64/pintool.so
-DATASTORE_EXE=${TEST_ROOT}/driver/data_store_hash
-PIN_EXE=${TEST_ROOT}/pin-3.10/pin
 
 TIMING_OUT=${WORKLOAD}_${TESTSIZE}_time.txt
 DEBUG_OUT=${WORKLOAD}_${TESTSIZE}_debug.txt
@@ -63,6 +58,16 @@ else
 fi
 
 echo Running ${WORKLOAD}. Test size = ${TESTSIZE}.
+
+# variables to use
+PMRACE_EXE=${TEST_ROOT}/pmrace/build/app/pmrace
+PINTOOL_SO=${TEST_ROOT}/pmrace/pintool/obj-intel64/pintool.so
+if [[ ${WORKLOAD} == "hashmap_atomic" && ${PATCH} != "" ]]; then
+	DATASTORE_EXE=${TEST_ROOT}/driver/data_store_hash
+else
+	DATASTORE_EXE=${TEST_ROOT}/driver/data_store
+fi
+PIN_EXE=${TEST_ROOT}/pin-3.10/pin
 
 # Generate config file
 CONFIG_FILE=${WORKLOAD}_${TESTSIZE}_config.txt

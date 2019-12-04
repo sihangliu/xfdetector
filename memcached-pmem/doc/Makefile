@@ -152,16 +152,16 @@ MANS = $(man_MANS)
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 am__DIST_COMMON = $(srcdir)/Makefile.in
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
-ACLOCAL = ${SHELL} /home/wiper_nvdimm/xfdetector/memcached-pmem/missing aclocal-1.15
+ACLOCAL = ${SHELL} /home/asplos20/xfdetector/memcached-pmem/missing aclocal-1.15
 AMTAR = $${TAR-tar}
 AM_DEFAULT_VERBOSITY = 1
-AUTOCONF = ${SHELL} /home/wiper_nvdimm/xfdetector/memcached-pmem/missing autoconf
-AUTOHEADER = ${SHELL} /home/wiper_nvdimm/xfdetector/memcached-pmem/missing autoheader
-AUTOMAKE = ${SHELL} /home/wiper_nvdimm/xfdetector/memcached-pmem/missing automake-1.15
+AUTOCONF = ${SHELL} /home/asplos20/xfdetector/memcached-pmem/missing autoconf
+AUTOHEADER = ${SHELL} /home/asplos20/xfdetector/memcached-pmem/missing autoheader
+AUTOMAKE = ${SHELL} /home/asplos20/xfdetector/memcached-pmem/missing automake-1.15
 AWK = mawk
 CC = gcc
 CCDEPMODE = depmode=gcc3
-CFLAGS = -I/home/wiper_nvdimm/xfdetector/pmrace/include -pthread -pthread -Wall -Werror -pedantic -Wmissing-prototypes -Wmissing-declarations -Wredundant-decls
+CFLAGS = -I/home/asplos20/xfdetector/pmrace/include -pthread -pthread -Wall -Werror -pedantic -Wmissing-prototypes -Wmissing-declarations -Wredundant-decls
 CPP = gcc -E
 CPPFLAGS = 
 CYGPATH_W = echo
@@ -183,9 +183,9 @@ INSTALL_SCRIPT = ${INSTALL}
 INSTALL_STRIP_PROGRAM = $(install_sh) -c -s
 LDFLAGS = 
 LIBOBJS = 
-LIBS = -levent -levent -L/home/wiper_nvdimm/xfdetector/pmrace/build/lib/ -Wl,-rpath=/home/wiper_nvdimm/xfdetector/pmrace/build/lib/ -lpmrace_interface
+LIBS = -levent -levent -L/home/asplos20/xfdetector/pmrace/build/lib/ -Wl,-rpath=/home/asplos20/xfdetector/pmrace/build/lib/ -lpmrace_interface
 LTLIBOBJS = 
-MAKEINFO = ${SHELL} /home/wiper_nvdimm/xfdetector/memcached-pmem/missing makeinfo
+MAKEINFO = ${SHELL} /home/asplos20/xfdetector/memcached-pmem/missing makeinfo
 MKDIR_P = /bin/mkdir -p
 OBJEXT = o
 PACKAGE = memcached
@@ -204,11 +204,11 @@ SHELL = /bin/bash
 STRIP = 
 VERSION = 1.5.4
 XML2RFC = no
-XSLTPROC = /usr/bin/xsltproc
-abs_builddir = /home/wiper_nvdimm/xfdetector/memcached-pmem/doc
-abs_srcdir = /home/wiper_nvdimm/xfdetector/memcached-pmem/doc
-abs_top_builddir = /home/wiper_nvdimm/xfdetector/memcached-pmem
-abs_top_srcdir = /home/wiper_nvdimm/xfdetector/memcached-pmem
+XSLTPROC = no
+abs_builddir = /home/asplos20/xfdetector/memcached-pmem/doc
+abs_srcdir = /home/asplos20/xfdetector/memcached-pmem/doc
+abs_top_builddir = /home/asplos20/xfdetector/memcached-pmem
+abs_top_srcdir = /home/asplos20/xfdetector/memcached-pmem
 ac_ct_CC = gcc
 am__include = include
 am__leading_dot = .
@@ -235,7 +235,7 @@ host_vendor = pc
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = ${SHELL} /home/wiper_nvdimm/xfdetector/memcached-pmem/install-sh
+install_sh = ${SHELL} /home/asplos20/xfdetector/memcached-pmem/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
@@ -500,16 +500,16 @@ uninstall-man: uninstall-man1
 
 
 protocol-binary.txt: protocol-binary.full
-	no -c /home/wiper_nvdimm/xfdetector/memcached-pmem/doc protocol-binary.full $@
+	no -c /home/asplos20/xfdetector/memcached-pmem/doc protocol-binary.full $@
 
 protocol-binary-range.txt: protocol-binary-range.full
-	no -c /home/wiper_nvdimm/xfdetector/memcached-pmem/doc protocol-binary-range.full $@
+	no -c /home/asplos20/xfdetector/memcached-pmem/doc protocol-binary-range.full $@
 
 protocol-binary.full: protocol-binary.xml xml2rfc/rfc2629-noinc.xsl
-	/usr/bin/xsltproc --nonet xml2rfc/rfc2629-noinc.xsl protocol-binary.xml > $@
+	no --nonet xml2rfc/rfc2629-noinc.xsl protocol-binary.xml > $@
 
 protocol-binary-range.full: protocol-binary-range.xml xml2rfc/rfc2629-noinc.xsl
-	/usr/bin/xsltproc --nonet xml2rfc/rfc2629-noinc.xsl protocol-binary-range.xml > $@
+	no --nonet xml2rfc/rfc2629-noinc.xsl protocol-binary-range.xml > $@
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
