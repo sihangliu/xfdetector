@@ -109,6 +109,8 @@ This repository is organized as the following structure:
 
 This repository provides a Makefile that compiles both XFDetector and test workloads under the root folder. Simply
 ```
+$ export PIN_ROOT=$(pwd)/pin-3.10
+$ export PATH=$PATH:$PIN_ROOT
 $ make
 ```
 The tests would be runnable when `make` is done.
