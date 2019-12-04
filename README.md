@@ -145,10 +145,9 @@ Install the compiled PMDK (require sudo privilege):
 ```
 
 ### Redis
-Compile Redis using the following command. Enable PMDK by making with environment variable `USE_PMDK=yes`. `STD=-std=gnu99` is added for correctness purpose in this case. You can refer to the `README.md` under `redis-nvml/` for more details on compilation.
+Compile Redis using the following script. You can refer to the `README.md` under `redis-nvml/` for more details on compilation.
 ```
-$ cd redis-nvml/
-$ make USE_PMDK=yes STD=-std=gnu99
+$ ./init-redis.sh
 ```
 
 ### Memcached

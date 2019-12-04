@@ -1,0 +1,65 @@
+diff --git a/src/Makefile b/src/Makefile
+index c5f67870..ddfd7a98 100644
+--- a/src/Makefile
++++ b/src/Makefile
+@@ -119,6 +119,11 @@ endif
+ 	FINAL_LIBS+= -ldl
+ endif
+ 
++TOP = $(shell pwd)
++FINAL_LIBS+= -L$(TOP)/../../pmrace/build/lib -Wl,-rpath=$(TOP)/../../pmrace/build/lib -lpmrace_interface
++FINAL_CFLAGS+= -I$(TOP)/../../pmrace/include
++CFLAGS+= -Bstatic
++
+ REDIS_CC=$(QUIET_CC)$(CC) $(FINAL_CFLAGS)
+ REDIS_LD=$(QUIET_LINK)$(CC) $(FINAL_LDFLAGS)
+ REDIS_INSTALL=$(QUIET_INSTALL)$(INSTALL)
+diff --git a/src/pmem.c b/src/pmem.c
+index 5e9e045d..45499f47 100644
+--- a/src/pmem.c
++++ b/src/pmem.c
+@@ -55,6 +55,7 @@ pmemReconstruct(void)
+ 
+         (void)dictAddReconstructedPM(d, key, val);
+     }
++    PMRace_addFailurePoint(1);
+     return C_OK;
+ }
+ 
+diff --git a/src/server.c b/src/server.c
+index eea72af4..573fbaee 100644
+--- a/src/server.c
++++ b/src/server.c
+@@ -55,6 +55,8 @@
+ #include <locale.h>
+ #include <sys/socket.h>
+ 
++#include "../../pmrace/include/pmrace_interface.h"
++
+ /* Our shared "common" objects */
+ 
+ struct sharedObjectsStruct shared;
+@@ -2677,6 +2679,7 @@ int prepareForShutdown(int flags) {
+     closeListeningSockets(1);
+     serverLog(LL_WARNING,"%s is now ready to exit, bye bye...",
+         server.sentinel_mode ? "Sentinel" : "Redis");
++    PMRace_complete(1,POST_FAILURE|PRE_FAILURE);
+     return C_OK;
+ }
+ 
+@@ -4184,6 +4187,7 @@ int main(int argc, char **argv) {
+         initPersistentMemory();
+     }
+ #endif
++    PMRace_RoIBegin(1, PRE_FAILURE | POST_FAILURE);
+ 
+     initServer();
+     if (background || server.pidfile) createPidFile();
+@@ -4209,6 +4213,7 @@ int main(int argc, char **argv) {
+             }
+ 	}
+ #endif
++	PMRace_RoIEnd(1, PRE_FAILURE | POST_FAILURE);
+         if (server.cluster_enabled) {
+             if (verifyClusterConfigWithData() == C_ERR) {
+                 serverLog(LL_WARNING,
