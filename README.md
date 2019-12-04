@@ -92,7 +92,7 @@ For more details about emulating PM, please refer to PMDK's [documentation](http
 The following is a list of software dependencies for XFDetector and test workloads (the listed versions have been tested, other versions might work but not guaranteed):   
 * OS: Ubuntu 18.04 (kernel 4.15)   
 * Compiler: g++/gcc-7
-* Libraries: libboost-1.65, ndctl-61.2   
+* Libraries: libboost-1.65 (`libboost-dev`), pkg-config (`pkg-config`), ndctl-61.2 (`libndctl-dev`), daxctl-61.2 (`libdaxctl-dev`).
 
 Other dependent libraries for the workloads are contained in this repository. 
 
