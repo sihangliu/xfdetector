@@ -63,9 +63,9 @@ This repository is organized as the following structure:
 * `memcached-pmem/`: A Memcached implementation (from [Lenovo](https://github.com/lenovo/memcached-pmem)) based on Intel's PMDK library. 
 * `patch/`: Patches for reproducing bugs and trying our tool
 
-This repository provides a Makefile that compiles both XFDetector and test workloads under the root folder. Simply
+This repository provides a Makefile that compiles both XFDetector and test workloads under the root folder. Simply execute:
 ```
-$ export PIN_ROOT=$(pwd)/pin-3.10
+$ export PIN_ROOT=<XFDetector Root>/pin-3.10
 $ export PATH=$PATH:$PIN_ROOT
 $ make
 ```
@@ -76,12 +76,11 @@ The followings are the detailed instructions to build XFDetector and workloads s
 
 ### Build XFDetector
 ```
-$ cd xfdetector/
 $ export PIN_ROOT=<XFDetector Root>/pin-3.10
 $ export PATH=$PATH:$PIN_ROOT
+$ cd <XFDetector Root>/xfdetector/
 $ make
 ```
-
 
 ### Build Driver Functions for PMDK Examples
 ```
