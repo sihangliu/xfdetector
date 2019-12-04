@@ -119,7 +119,9 @@ The followings are the detailed instructions to build XFDetector and workloads s
 ### Build XFDetector
 ```
 $ cd pmrace/
-$ export PIN_ROOT=$(shell pwd)/pin-3.10 && make
+$ export PIN_ROOT=$(pwd)/pin-3.10
+$ export PATH=$PATH:$PIN_ROOT
+$ make
 ```
 
 
