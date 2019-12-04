@@ -11,9 +11,13 @@ usage()
     echo ""
     echo "    WORKLOAD:   The workload to test."
     echo "    TESTSIZE:   The size of workload to test. Usually 10 will be sufficient for reproducing all bugs."
-    echo "    PATCH:      The name of the patch that reproduces bugs for WORKLOAD. If not specfied, then we test the original program without bugs."
+    echo "    PATCH:      The name of the patch that reproduces bugs for WORKLOAD. If not specified, then we test the original program without bugs."
     echo ""
 }
+
+if [[ $1 == "-h" ]]; then
+    usage; exit 1
+fi
 
 
 # Workload

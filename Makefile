@@ -1,5 +1,6 @@
 all:
-	make -C pmrace
+	export PIN_ROOT=$(shell pwd)/pin-3.10 && make -C pmrace
+	make -C driver
 	make -C pmdk EXTRA_CFLAGS="-Wno-error"
 	cd memcached-pmem && env LIBS="-levent -L$(shell pwd)/pmrace/build/lib/ -Wl,-rpath=$(shell pwd)/pmrace/build/lib/ -lpmrace_interface" CFLAGS="-I$(shell pwd)/pmrace/include" ./configure --enable-pslab
 	make -C memcached-pmem
