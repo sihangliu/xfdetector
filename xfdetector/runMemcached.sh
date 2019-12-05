@@ -1,6 +1,10 @@
 #!/bin/bash
 # set -x
 
+if [[ ${PIN_ROOT} == "" ]]; then
+    echo  -e "${RED}Error:${NC} Environment variable PIN_ROOT not set. Please specify the full path." >&2; exit 1
+fi
+
 # Workload
 WORKLOAD=memcached
 TESTSIZE=$1
@@ -46,13 +50,9 @@ wait
 
 # Run realworkload
 # Start XFDetector
-${PMRACE_EXE} ${CONFIG_FILE} > ${TIMING_OUT} 2> ${DEBUG_OUT} &
+(${PMRACE_EXE} ${CONFIG_FILE} | tee ${TIMING_OUT}) 3>&1 1>&2 2>&3 | tee ${DEBUG_OUT} &
 sleep 1
 ${PIN_EXE} -t ${PINTOOL_SO} -t 1 -f 1 -- ${MEMCACHED_EXE} -A -m0 -o pslab_file="${PMIMAGE}",pslab_force,pslab_recover > /dev/null &
 sleep 10
 ${MEMCACHED_TEST} ${TESTSIZE}
 wait
-
-# print the output
-cat ${DEBUG_OUT}
-cat ${TIMING_OUT} | grep "Total-failure time"

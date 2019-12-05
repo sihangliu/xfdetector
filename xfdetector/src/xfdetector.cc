@@ -511,16 +511,23 @@ void ExeCtrl::kill_proc(unsigned pid)
 
 string ExeCtrl::genPinCommand(int stage, string pm_image_name)
 {
-    if (stage == PRE_FAILURE) {
-        return "pin -t " + pintool_path + " " + pin_pre_failure_option 
-                + " -- " +  pre_failure_exec_command;
-    } else if (stage == POST_FAILURE) {
-        // cerr << "PIN POST COMMAND: " << "pin -t " + pintool_path + " " + pin_post_failure_option 
-        //         + " -- " + post_failure_exec_command_part1 + pm_image_name 
-        //         + post_failure_exec_command_part2 << endl;
-        return "export POST_FAILURE=1; pin -t " + pintool_path + " " + pin_post_failure_option 
-                + " -- " + post_failure_exec_command_part1 + pm_image_name 
-                + post_failure_exec_command_part2;
+    const char *pin_root = std::getenv("PIN_ROOT");
+    if (strcmp(pin_root, "") != 0) {
+        if (stage == PRE_FAILURE) {
+            return std::string(pin_root) + "/pin -t " + pintool_path + " " + pin_pre_failure_option 
+                    + " -- " +  pre_failure_exec_command;
+        } else if (stage == POST_FAILURE) {
+            // cerr << "PIN POST COMMAND: " 
+            //     << ("export POST_FAILURE=1; " + std::string(pin_root) + "/pin -t " + pintool_path + " " + pin_post_failure_option 
+            //         + " -- " + post_failure_exec_command_part1 + pm_image_name 
+            //         + post_failure_exec_command_part2) << endl;
+            return "export POST_FAILURE=1; " + std::string(pin_root) + "/pin -t " + pintool_path + " " + pin_post_failure_option 
+                    + " -- " + post_failure_exec_command_part1 + pm_image_name 
+                    + post_failure_exec_command_part2;
+        }
+    }
+    else {
+        assert(0 && "Environment PIN_ROOT not set.");
     }
 }
 

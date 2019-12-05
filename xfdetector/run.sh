@@ -20,6 +20,10 @@ if [[ $1 == "-h" ]]; then
     usage; exit 1
 fi
 
+if [[ ${PIN_ROOT} == "" ]]; then
+    echo  -e "${RED}Error:${NC} Environment variable PIN_ROOT not set. Please specify the full path." >&2; exit 1
+fi
+
 
 # Workload
 WORKLOAD=$1
@@ -111,11 +115,7 @@ fi
 # Run realworkload
 # Start XFDetector
 echo -e "${GRN}Info:${NC} We kill the post program after running some time, so don't panic if you see a process gets killed."
-timeout ${MAX_TIMEOUT} ${PMRACE_EXE} ${CONFIG_FILE} > ${TIMING_OUT} 2> ${DEBUG_OUT} &
+(timeout ${MAX_TIMEOUT} ${PMRACE_EXE} ${CONFIG_FILE} | tee ${TIMING_OUT}) 3>&1 1>&2 2>&3 | tee ${DEBUG_OUT} &
 sleep 1
 timeout ${MAX_TIMEOUT} ${PIN_EXE} -t ${PINTOOL_SO} -o xfdetector.out -t 1 -f 1 -- ${DATASTORE_EXE} ${WORKLOAD} ${PMIMAGE} ${TESTSIZE} > /dev/null
 wait
-
-# print the output
-cat ${DEBUG_OUT}
-cat ${TIMING_OUT} | grep "Total-failure time"
