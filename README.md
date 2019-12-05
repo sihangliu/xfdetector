@@ -13,6 +13,8 @@
   * [Redis](#redis)
   * [Memcached](#memcached)
   * [Testing Other Workloads](#testing-other-workloads)
+  
+
 ## Introduction to XFDetector
 Persistent memory (PM) technologies, such as Intel's Optane memory, deliver high performance, byte-addressability and persistence, allowing program to directly manipulate persistent data in memory without OS overhead. 
 An important requirement of these programs is that persistent data must remain consistent across a failure, which we refer to as the crash consistency guarantee.
@@ -70,7 +72,9 @@ $ export PATH=$PATH:$PIN_ROOT
 $ export PMEM_MMAP_HINT=0x10000000000
 $ make
 ```
-The tests would be runnable when `make` is done.
+The tests would be runnable when `make` is done. 
+`PMEM_MMAP_HINT` is a debugging functionality from PMDK that maps PM to a predefined virtual address. 
+Proper exeuction of XFDetector requires that `PMEM_MMAP_HINT`, `PIN_ROOT` and `PATH` are set up.
 
 The followings are the detailed instructions to build XFDetector and workloads separately. 
 **If compile all at once, skip the rest steps in Installation.**
@@ -79,7 +83,6 @@ The followings are the detailed instructions to build XFDetector and workloads s
 ```
 $ export PIN_ROOT=<XFDetector Root>/pin-3.10
 $ export PATH=$PATH:$PIN_ROOT
-$ export PMEM_MMAP_HINT=0x10000000000
 $ cd <XFDetector Root>/xfdetector/
 $ make
 ```
@@ -134,6 +137,13 @@ Tests for the following programs are available in XFDetector:
 * Memcached
 
 We provide patches for reproducing some of the synthetic bugs that we created and reported in the paper. The scripts for applying the patches and running the buggy programs are under `xfdetector/` folder.
+
+Before running any program, please execute the following commands under the root directory of XFDetector:
+```
+$ export PIN_ROOT=<XFDetector Root>/pin-3.10
+$ export PATH=$PATH:$PIN_ROOT
+$ export PMEM_MMAP_HINT=0x10000000000
+```
 
 The detailed steps for testing and reproducing bugs on those programs are as follows.
 
