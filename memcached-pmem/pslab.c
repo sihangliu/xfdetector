@@ -364,7 +364,7 @@ int pslab_create(char *pool_name, uint32_t pool_size, uint32_t slab_page_size,
     pslab_checksum_update(0, 0);
 
     pmem_persist(pslab_pool, pslab_pool->length);
-    PMRace_addCommitVar(&(pslab_pool->valid), sizeof(pslab_pool->valid));
+    XFDetector_addCommitVar(&(pslab_pool->valid), sizeof(pslab_pool->valid));
     pslab_pool->valid = 1;
     pmem_member_persist(pslab_pool, valid);
 

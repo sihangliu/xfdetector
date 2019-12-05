@@ -230,7 +230,7 @@ private:
     const string pin_post_failure_option = PIN_TRACK_READ + PIN_ENABLE_FIFO + PIN_REDIRECT_OUT;
 };
 
-class PMRaceFIFO {
+class XFDetectorFIFO {
 public:
     // Read from pre-failure FIFO
     int pre_fifo_read();
@@ -242,8 +242,8 @@ public:
     void clear_pre_fifo_buf() {memset(pre_fifo_buf, 0, PIN_FIFO_BUF_SIZE);}
     void clear_post_fifo_buf() {memset(post_fifo_buf, 0, PIN_FIFO_BUF_SIZE);}
 
-    PMRaceFIFO();
-    ~PMRaceFIFO();
+    XFDetectorFIFO();
+    ~XFDetectorFIFO();
 
     void fifo_open(const char*);
     void fifo_close(const char*);
@@ -269,7 +269,7 @@ private:
     int signal_fifo_fd;
 };
 
-class PMRaceDetector {
+class XFDetectorDetector {
 public:
     // void update_pre_failure_status(ShadowPM*, trace_entry_t*);
     // void update_post_failure_status(ShadowPM*, trace_entry_t*);
@@ -278,8 +278,8 @@ public:
     void locate_bug(trace_entry_t*, string);
     // Trace printer for debugging
     void print_pm_trace(int, trace_entry_t*);
-    // PMRaceDetector();
-    // ~PMRaceDetector();
+    // XFDetectorDetector();
+    // ~XFDetectorDetector();
     bool pre_testing_complete = INCOMPLETE;
     bool pre_failure_point_complete = INCOMPLETE;
     bool post_testing_complete = INCOMPLETE;

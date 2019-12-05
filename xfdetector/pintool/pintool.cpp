@@ -41,7 +41,7 @@ void* fifo_ptr;
 int stage = PRE_FAILURE;
 
 // Pintool classes
-#include "pmrace_pintool.hh"
+#include "xfdetector_pintool.hh"
 
 // RoI management
 RoITracker roi_tracker;
@@ -77,9 +77,9 @@ int failure_point_count;
 PINFifo trace_fifo;
 SignalFifo signal_fifo;
 
-// PMRace include after global variables
-#include "pmrace_pmem.hh"
-#include "pmrace_tx.hh"
+// XFDetector include after global variables
+#include "xfdetector_pmem.hh"
+#include "xfdetector_tx.hh"
 
 
 /* ===================================================================== */
@@ -388,7 +388,7 @@ int main(int argc, char *argv[])
 
     // Pint tool description
     cerr <<  "===============================================" << endl;
-    cerr <<  "This application is instrumented by PMRacePinTool" << endl;
+    cerr <<  "This application is instrumented by XFDetectorPinTool" << endl;
     
     // Output option
     if (!KnobOutputFile.Value().empty()) 

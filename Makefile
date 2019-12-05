@@ -1,7 +1,7 @@
-all: pmrace pmdk driver redis memcached
+all: xfdetector pmdk driver redis memcached
 
-pmrace:
-	export PIN_ROOT=$(shell pwd)/pin-3.10 && make -C pmrace
+xfdetector:
+	export PIN_ROOT=$(shell pwd)/pin-3.10 && make -C xfdetector
 
 pmdk:
 	make -C pmdk EXTRA_CFLAGS="-Wno-error"
@@ -13,14 +13,14 @@ redis:
 	./init_redis.sh
 
 memcached:
-	cd memcached-pmem && env LIBS="-levent -L$(shell pwd)/pmrace/build/lib/ -Wl,-rpath=$(shell pwd)/pmrace/build/lib/ -lpmrace_interface" CFLAGS="-I$(shell pwd)/pmrace/include" ./configure --enable-pslab
+	cd memcached-pmem && env LIBS="-levent -L$(shell pwd)/xfdetector/build/lib/ -Wl,-rpath=$(shell pwd)/xfdetector/build/lib/ -lxfdetector_interface" CFLAGS="-I$(shell pwd)/xfdetector/include" ./configure --enable-pslab
 	make -C memcached-pmem
 
 clean:
-	make clean -C pmrace
+	make clean -C xfdetector
 	make clean -C pmdk
 	make clean -C driver
 	rm -rf redis-nvml
 	make clean -C memcached-pmem
 
-.PHONY: clean pmrace pmdk driver redis memcached
+.PHONY: clean xfdetector pmdk driver redis memcached

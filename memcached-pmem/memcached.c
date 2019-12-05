@@ -5565,12 +5565,12 @@ static void drive_machine(conn *c) {
             if (c->rlbytes == 0) {
 			time_t ops_begin, ops_end;
 			time(&ops_begin);
-		        PMRace_RoIBegin(1, PRE_FAILURE);
+		        XFDetector_RoIBegin(1, PRE_FAILURE);
                 complete_nread(c);
-		        PMRace_RoIEnd(1, PRE_FAILURE);
+		        XFDetector_RoIEnd(1, PRE_FAILURE);
 			time(&ops_end);
 			fprintf(stderr, "OP time: %ld\n", ops_end-ops_begin);
-		        //PMRace_complete(1, PRE_FAILURE);
+		        //XFDetector_complete(1, PRE_FAILURE);
                 break;
             }
 
@@ -6481,7 +6481,7 @@ static void remove_pidfile(const char *pid_file) {
 
 static void sig_handler(const int sig) {
     printf("Signal handled: %s.\n", strsignal(sig));
-    PMRace_complete(1, POST_FAILURE|PRE_FAILURE);
+    XFDetector_complete(1, POST_FAILURE|PRE_FAILURE);
     exit(EXIT_SUCCESS);
 }
 
@@ -7739,7 +7739,7 @@ fprintf(stderr, "pslab_size=%ld", pslab_size);
 #ifdef PSLAB
     if (pslab_file) {
         if (settings.pslab_recover == true) {
-            PMRace_RoIBegin(1, POST_FAILURE);	
+            XFDetector_RoIBegin(1, POST_FAILURE);	
             if (pslab_pre_recover(pslab_file, slab_sizes,
                     MAX_NUMBER_OF_SLAB_CLASSES, settings.slab_page_size) == 0) {
                 if (slab_sizes_unparsed != NULL) {
@@ -7766,8 +7766,8 @@ fprintf(stderr, "pslab_size=%ld", pslab_size);
                 fprintf(stderr, "pslab_pre_recover failed\n");
                 exit(EXIT_FAILURE);
             }
-            PMRace_RoIEnd(1, POST_FAILURE);	
-            PMRace_complete(1, POST_FAILURE);
+            XFDetector_RoIEnd(1, POST_FAILURE);	
+            XFDetector_complete(1, POST_FAILURE);
         } else {
             if (pslab_size)
                 settings.pslab_size = pslab_size;

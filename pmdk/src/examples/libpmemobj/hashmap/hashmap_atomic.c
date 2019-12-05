@@ -42,7 +42,7 @@
 #include "hashmap_atomic.h"
 #include "hashmap_internal.h"
 
-#include "pmrace_interface.h"
+#include "xfdetector_interface.h"
 
 /* layout definition */
 TOID_DECLARE(struct buckets, HASHMAP_ATOMIC_TYPE_OFFSET + 1);
@@ -250,7 +250,7 @@ int
 hm_atomic_insert(PMEMobjpool *pop, TOID(struct hashmap_atomic) hashmap,
 		uint64_t key, PMEMoid value)
 {
-	PMRace_addCommitVar(&D_RW(hashmap)->count_dirty, sizeof(D_RW(hashmap)->count_dirty));
+	XFDetector_addCommitVar(&D_RW(hashmap)->count_dirty, sizeof(D_RW(hashmap)->count_dirty));
 	//fprintf(stderr ,"adding commit var\n");
 	TOID(struct buckets) buckets = D_RO(hashmap)->buckets;
 	TOID(struct entry) var;
@@ -458,7 +458,7 @@ hm_atomic_init(PMEMobjpool *pop, TOID(struct hashmap_atomic) hashmap)
 	srand(D_RO(hashmap)->seed);
 
 	//fprintf(stderr ,"Initing\n");
-	//PMRace_addCommitVar(&D_RO(hashmap)->count, sizeof(D_RO(hashmap)->count));
+	//XFDetector_addCommitVar(&D_RO(hashmap)->count, sizeof(D_RO(hashmap)->count));
 
 	/* handle rebuild interruption */
 	if (!TOID_IS_NULL(D_RO(hashmap)->buckets_tmp)) {

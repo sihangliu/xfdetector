@@ -1,6 +1,6 @@
 #include <assert.h>
 
-#include "pmrace_interface.h"
+#include "xfdetector_interface.h"
 #include <signal.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -8,7 +8,7 @@
 
 
 __thread int trace_status = NOT_TRACING;
-__thread int pmrace_failure_skip_status = NOT_SKIP;
+__thread int xfdetector_failure_skip_status = NOT_SKIP;
 __thread int has_completed = INCOMPLETE;
 
 #ifdef PMRACE_STAT
@@ -31,35 +31,35 @@ void _add_commit_var(const void*, unsigned);
 void _roi_pre_begin(void)
 {
     assert(trace_status == NOT_TRACING 
-        && "Error: PMRace has already started tracing, canont start RoI again");
+        && "Error: XFDetector has already started tracing, canont start RoI again");
 }
 
 void _roi_pre_end(void)
 {
     assert(trace_status == TRACING 
-        && "Error: PMRace has not started tracing, cannot end RoI");
+        && "Error: XFDetector has not started tracing, cannot end RoI");
 }
 
 void _roi_post_begin(void)
 {
     assert(trace_status == NOT_TRACING 
-        && "Error: PMRace has already started tracing, canont start RoI again");
+        && "Error: XFDetector has already started tracing, canont start RoI again");
 }
 
 void _roi_post_end(void)
 {
     assert(trace_status == TRACING 
-        && "Error: PMRace has not started tracing, cannot end RoI");
+        && "Error: XFDetector has not started tracing, cannot end RoI");
 }
 
 void _skip_failure_point_begin(void)
 {
-    pmrace_failure_skip_status = SKIP;
+    xfdetector_failure_skip_status = SKIP;
 }
 
 void _skip_failure_point_end(void)
 {
-    pmrace_failure_skip_status = NOT_SKIP;
+    xfdetector_failure_skip_status = NOT_SKIP;
 }
 
 void _add_failure_point(void)
@@ -111,7 +111,7 @@ void _add_commit_var(const void* variable, unsigned size)
 }
 
 /* User interface functions */
-void PMRace_RoIBegin(int condition, int stage)
+void XFDetector_RoIBegin(int condition, int stage)
 {
     assert(has_completed == INCOMPLETE && "Error: Testing has completed already");
     if (condition) {
@@ -129,7 +129,7 @@ void PMRace_RoIBegin(int condition, int stage)
     trace_status = TRACING;
 }
 
-void PMRace_RoIEnd(int condition, int stage)
+void XFDetector_RoIEnd(int condition, int stage)
 {
     assert(has_completed == INCOMPLETE && "Error: Testing has completed already");
     if (condition) {
@@ -147,25 +147,25 @@ void PMRace_RoIEnd(int condition, int stage)
     trace_status = NOT_TRACING;
 }
 
-void PMRace_addFailurePoint(int condition)
+void XFDetector_addFailurePoint(int condition)
 {
     assert(has_completed == INCOMPLETE && "Error: Testing has completed already");
     if (condition) {_add_failure_point();}
 }
 
-void PMRace_skipFailureBegin(int condition)
+void XFDetector_skipFailureBegin(int condition)
 {
     assert(has_completed == INCOMPLETE && "Error: Testing has completed already");
     if (condition) {_skip_failure_point_begin();}
 }
 
-void PMRace_skipFailureEnd(int condition) 
+void XFDetector_skipFailureEnd(int condition) 
 {
     assert(has_completed == INCOMPLETE && "Error: Testing has completed already");
     if (condition) {_skip_failure_point_end();}
 }
 
-void PMRace_complete(int condition, int stage) 
+void XFDetector_complete(int condition, int stage) 
 {
     assert(has_completed == INCOMPLETE && "Error: Testing has completed already");
     if (condition) {
@@ -191,7 +191,7 @@ void PMRace_complete(int condition, int stage)
     }
 }
 
-void PMRace_addCommitVar(const void* variable, unsigned size)
+void XFDetector_addCommitVar(const void* variable, unsigned size)
 {
     _add_commit_var(variable, size);
 }

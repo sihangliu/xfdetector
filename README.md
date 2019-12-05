@@ -56,7 +56,7 @@ Other dependent libraries for the workloads are contained in this repository.
 
 ## Installation
 This repository is organized as the following structure:
-* `pmrace/`: The source code of our tool.
+* `xfdetector/`: The source code of our tool.
 * `driver/`: The modified driver function of PMDK examples.
 * `pmdk/`: Intel's [PMDK](https://pmem.io/) library, including its example PM programs.
 * `redis-nvml/`: A Redis implementation (from [Intel](https://github.com/pmem/redis/tree/3.2-nvml)) based on PMDK (PMDK was previously named as NVML).
@@ -113,7 +113,7 @@ $ ./init-redis.sh
 Configure the Memcached using the following command. The variable `LIBS` and `CFLAGS` include the XFDetector's interface and the option `--enable-pslab` enables PM as persistent storage. 
 ```
 $ cd memcached-pmem/
-$ env LIBS='-levent -L../pmrace/build/lib/ -Wl,-rpath=../pmrace/build/lib/ -lpmrace_interface' CFLAGS='-I../pmrace/include' ./configure --enable-pslab
+$ env LIBS='-levent -L../xfdetector/build/lib/ -Wl,-rpath=../xfdetector/build/lib/ -lxfdetector_interface' CFLAGS='-I../xfdetector/include' ./configure --enable-pslab
 ```
 Compile our annotated Memcached:
 ```
@@ -133,17 +133,17 @@ Tests for the following programs are available in XFDetector:
 * Redis
 * Memcached
 
-We provide patches for reproducing some of the synthetic bugs that we created and reported in the paper. The scripts for applying the patches and running the buggy programs are under `pmrace/` folder.
+We provide patches for reproducing some of the synthetic bugs that we created and reported in the paper. The scripts for applying the patches and running the buggy programs are under `xfdetector/` folder.
 
 The detailed steps for testing and reproducing bugs on those programs are as follows.
 
 ### PMDK Examples
-Use script `pmrace/run.sh` to insert bugs and run all those examples. The usage is shown as follows. The user can also run `./run.sh -h` to check this information.
+Use script `xfdetector/run.sh` to insert bugs and run all those examples. The usage is shown as follows. The user can also run `./run.sh -h` to check this information.
 ```
 Usage: ./run.sh WORKLOAD INITSIZE TESTSIZE [PATCH]
     WORKLOAD:   The workload to test.
     INITSIZE:   The number of data insertions when initializing the image. This is for fast-forwarding the initialization.
-    TESTSIZE:   The number of additional data insertions when reproducing bugs with PMRace.
+    TESTSIZE:   The number of additional data insertions when reproducing bugs with XFDetector.
     PATCH:      The name of the patch that reproduces bugs for WORKLOAD. If not specified, then we test the original program without bugs.
 ```
 For example, to reproduce the `race1` bug in `btree`, we need to insert 5 elements on both initialization and testing, so we can run the following command:
@@ -154,21 +154,21 @@ $ ./run.sh btree 5 5 race1
 For a complete list of all available tests and corresponding parameters that can be used to reproduce the bugs, check `runallPMDK.sh`. You can also directly run the script to run all available tests. (Not recommended, since this will take a long time)
 
 ### Redis
-Use script `pmrace/runRedis.sh` to run Redis examples. The usage is shown as follows.
+Use script `xfdetector/runRedis.sh` to run Redis examples. The usage is shown as follows.
 ```
 Usage: ./runRedis.sh TESTSIZE
 	TESTSIZE:   The size of workload to test.
 ```
 
 ### Memcached
-Use script `pmrace/runMemcached.sh` to run Memcached examples. The usage is shown as follows.
+Use script `xfdetector/runMemcached.sh` to run Memcached examples. The usage is shown as follows.
 ```
 Usage: ./runMemcached.sh TESTSIZE
 	TESTSIZE:   The size of workload to test.
 ```
 
 ### Testing Other Workloads
-The interface from PMRace for annotation is defined in `include/pmrace_interface.h`.
+The interface from XFDetector for annotation is defined in `include/xfdetector_interface.h`.
 In these functions, 
 field `condition` is a boolean option that enables/disables this function and 
 field `stage` can be `PRE_FAILURE`, `POST_FAILURE` or `PRE_FAILURE|POST_FAILURE` (both). 
@@ -176,19 +176,19 @@ field `stage` can be `PRE_FAILURE`, `POST_FAILURE` or `PRE_FAILURE|POST_FAILURE`
 
 * Select region-of-interest for testing:
 ```
-void PMRace_RoIBegin(int condition, int stage);
-void PMRace_RoIEnd(int condition, int stage);
+void XFDetector_RoIBegin(int condition, int stage);
+void XFDetector_RoIEnd(int condition, int stage);
 ```
 
 * Terminate testing (kill the process):
 ```
-void PMRace_complete(int condition, int stage);
+void XFDetector_complete(int condition, int stage);
 ```
 
 * Add commit variable to detect cross-failure semantic bugs:   
 Field `var` is the pointer to the selected commit variable, and field `size` is the size of the commit variable.
 ```
-void PMRace_addCommitVar(const void* var, unsigned size);
+void XFDetector_addCommitVar(const void* var, unsigned size);
 ```
 <!-- 
 * Annotate your own PM libraries:

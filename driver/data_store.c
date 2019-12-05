@@ -50,7 +50,7 @@
 #include "map_hashmap_rp.h"
 #include "map_skiplist.h"
 #include "hashmap.h"
-#include "pmrace_interface.h"
+#include "xfdetector_interface.h"
 
 POBJ_LAYOUT_BEGIN(data_store);
 POBJ_LAYOUT_ROOT(data_store, struct store_root);
@@ -172,7 +172,7 @@ int main(int argc, const char *argv[]) {
 		}
 	}
 
-	PMRace_RoIBegin(TRACING, PRE_FAILURE|POST_FAILURE);
+	XFDetector_RoIBegin(TRACING, PRE_FAILURE|POST_FAILURE);
 	TOID(struct store_root) root = POBJ_ROOT(pop, struct store_root);
 	printf("root->map=%p\n", &D_RW(root)->map);
 	struct map_ctx *mapc = map_ctx_init(map_ops, pop);
@@ -199,7 +199,7 @@ int main(int argc, const char *argv[]) {
 		TX_BEGIN(pop){
 			map_insert(mapc, D_RW(root)->map, rand(),
 					new_store_item().oid);
-					PMRace_addFailurePoint(TRACING);
+					XFDetector_addFailurePoint(TRACING);
 		} TX_ONABORT {
 			perror("transaction aborted\n");
 			map_ctx_free(mapc);
@@ -233,8 +233,8 @@ int main(int argc, const char *argv[]) {
 		map_foreach(mapc, D_RW(root)->map, dec_keys, NULL);
 		assert(old_nkeys == nkeys);
 	*/
-	PMRace_RoIEnd(TRACING, PRE_FAILURE|POST_FAILURE);
-	PMRace_complete(TRACING, PRE_FAILURE|POST_FAILURE);
+	XFDetector_RoIEnd(TRACING, PRE_FAILURE|POST_FAILURE);
+	XFDetector_complete(TRACING, PRE_FAILURE|POST_FAILURE);
 	map_ctx_free(mapc);
 	pmemobj_close(pop);
 	

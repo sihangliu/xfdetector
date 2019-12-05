@@ -10,8 +10,8 @@ PMIMAGE=/mnt/pmem0/${WORKLOAD}
 TEST_ROOT=../
 
 # variables to use
-PMRACE_EXE=${TEST_ROOT}/pmrace/build/app/pmrace
-PINTOOL_SO=${TEST_ROOT}/pmrace/pintool/obj-intel64/pintool.so
+PMRACE_EXE=${TEST_ROOT}/xfdetector/build/app/xfdetector
+PINTOOL_SO=${TEST_ROOT}/xfdetector/pintool/obj-intel64/pintool.so
 MEMCACHED_EXE=${TEST_ROOT}/memcached-pmem/memcached
 MEMCACHED_TEST=${TEST_ROOT}/script/memcached_test.sh
 PIN_EXE=${TEST_ROOT}/pin-3.10/pin
@@ -45,7 +45,7 @@ ${MEMCACHED_EXE} -A -p 11211 -m 0 -o pslab_file=${PMIMAGE},pslab_force & ( sleep
 wait
 
 # Run realworkload
-# Start PMRace
+# Start XFDetector
 ${PMRACE_EXE} ${CONFIG_FILE} > ${TIMING_OUT} 2> ${DEBUG_OUT} &
 sleep 1
 ${PIN_EXE} -t ${PINTOOL_SO} -t 1 -f 1 -- ${MEMCACHED_EXE} -A -m0 -o pslab_file="${PMIMAGE}",pslab_force,pslab_recover > /dev/null &

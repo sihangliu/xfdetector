@@ -165,10 +165,10 @@ endif
 
 define arch32_error_msg
 
-#PMRace
-PMRACE_DIR := $(TOP)/../pmrace
+#XFDetector
+PMRACE_DIR := $(TOP)/../xfdetector
 PMRACE_INC := -I$(PMRACE_DIR)/include
-PMRACE_LIB := -L$(PMRACE_DIR)/build/lib -Wl,-rpath=$(PMRACE_DIR)/build/lib -lpmrace_interface
+PMRACE_LIB := -L$(PMRACE_DIR)/build/lib -Wl,-rpath=$(PMRACE_DIR)/build/lib -lxfdetector_interface
 INCS += $(PMRACE_INC)
 LIBS += $(PMRACE_LIB)
 

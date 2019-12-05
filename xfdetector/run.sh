@@ -1,5 +1,5 @@
 #!/bin/bash
-set -x
+# set -x
 RED='\033[0;31m'
 GRN='\033[0;32m'
 NC='\033[0m' # No Color
@@ -11,7 +11,7 @@ usage()
     echo ""
     echo "    WORKLOAD:   The workload to test."
     echo "    INITSIZE:   The number of data insertions when initializing the image. This is for fast-forwarding the initialization."
-    echo "    TESTSIZE:   The number of additional data insertions when reproducing bugs with PMRace."
+    echo "    TESTSIZE:   The number of additional data insertions when reproducing bugs with XFDetector."
     echo "    PATCH:      The name of the patch that reproduces bugs for WORKLOAD. If not specified, then we test the original program without bugs."
     echo ""
 }
@@ -66,8 +66,8 @@ fi
 echo -e "${GRN}Info:${NC} Testing ${WORKLOAD}. Init size = ${INITSIZE}. Test size = ${TESTSIZE}."
 
 # variables to use
-PMRACE_EXE=${TEST_ROOT}/pmrace/build/app/pmrace
-PINTOOL_SO=${TEST_ROOT}/pmrace/pintool/obj-intel64/pintool.so
+PMRACE_EXE=${TEST_ROOT}/xfdetector/build/app/xfdetector
+PINTOOL_SO=${TEST_ROOT}/xfdetector/pintool/obj-intel64/pintool.so
 if [[ ${WORKLOAD} == "hashmap_atomic" && ${PATCH} != "" ]]; then
 	DATASTORE_EXE=${TEST_ROOT}/driver/data_store_hash
 else
@@ -109,11 +109,11 @@ if [[ ${INITSIZE} -gt 0 ]]; then
 fi
 
 # Run realworkload
-# Start PMRace
+# Start XFDetector
 echo -e "${GRN}Info:${NC} We kill the post program after running some time, so don't panic if you see a process gets killed."
 timeout ${MAX_TIMEOUT} ${PMRACE_EXE} ${CONFIG_FILE} > ${TIMING_OUT} 2> ${DEBUG_OUT} &
 sleep 1
-timeout ${MAX_TIMEOUT} ${PIN_EXE} -t ${PINTOOL_SO} -o pmrace.out -t 1 -f 1 -- ${DATASTORE_EXE} ${WORKLOAD} ${PMIMAGE} ${TESTSIZE} > /dev/null
+timeout ${MAX_TIMEOUT} ${PIN_EXE} -t ${PINTOOL_SO} -o xfdetector.out -t 1 -f 1 -- ${DATASTORE_EXE} ${WORKLOAD} ${PMIMAGE} ${TESTSIZE} > /dev/null
 wait
 
 # print the output

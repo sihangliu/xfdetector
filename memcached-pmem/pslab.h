@@ -7,8 +7,8 @@
 #define PSLAB_H
 
 #include <libpmem.h>
-// PMRace
-#include "pmrace_interface.h"
+// XFDetector
+#include "xfdetector_interface.h"
 
 #define	PSLAB_POLICY_DRAM 0
 #define	PSLAB_POLICY_PMEM 1

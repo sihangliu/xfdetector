@@ -1,5 +1,5 @@
 #!/bin/bash
-set -x
+# set -x
 
 # Workload
 WORKLOAD=redis
@@ -10,8 +10,8 @@ PMIMAGE=/mnt/pmem0/${WORKLOAD}
 TEST_ROOT="$PWD"/..
 
 # variables to use
-PMRACE_EXE=${TEST_ROOT}/pmrace/build/app/pmrace
-PINTOOL_SO=${TEST_ROOT}/pmrace/pintool/obj-intel64/pintool.so
+PMRACE_EXE=${TEST_ROOT}/xfdetector/build/app/xfdetector
+PINTOOL_SO=${TEST_ROOT}/xfdetector/pintool/obj-intel64/pintool.so
 REDIS_SERVER=${TEST_ROOT}/redis-nvml/src/redis-server
 REDIS_TEST=${TEST_ROOT}/script/redis_test.sh
 REDIS_TEST_POST=${TEST_ROOT}/script/redis_test_post.sh
@@ -46,7 +46,7 @@ ${REDIS_SERVER} ${TEST_ROOT}/redis-nvml/redis.conf pmfile ${PMIMAGE} 8mb & (slee
 wait
 
 # Run realworkload
-# Start PMRace
+# Start XFDetector
 ${PMRACE_EXE} ${CONFIG_FILE} > ${TIMING_OUT} 2> ${DEBUG_OUT} &
 sleep 1
 ${PIN_EXE} -t ${PINTOOL_SO} -t 1 -f 1 -- ${REDIS_SERVER} ${TEST_ROOT}/redis-nvml/redis.conf pmfile ${PMIMAGE} 8mb  &

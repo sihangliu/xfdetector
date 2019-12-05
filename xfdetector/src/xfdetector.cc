@@ -1,4 +1,4 @@
-#include "pmrace.hh"
+#include "xfdetector.hh"
 #include <sys/time.h>
 ShadowPM::ShadowPM()
 {
@@ -438,7 +438,7 @@ void ExeCtrl::execute_post_failure()
 string ExeCtrl::copy_pm_image()
 {
     // Use tid to name copy image
-    string copy_name = pm_image_name + "_pmrace_" + std::to_string(pthread_self());
+    string copy_name = pm_image_name + "_xfdetector_" + std::to_string(pthread_self());
     // copy_file(path(pm_image_name), path(copy_name), copy_option::overwrite_if_exists);
     string copy_command = "cp " + pm_image_name + " " + copy_name;
     // cerr << copy_command << endl;
@@ -451,7 +451,7 @@ void ExeCtrl::parse_exec_command()
 {
     // Config file usage
     string usage = "Config file follows this format: \n\
-                    PINTOOL_PATH </path/to/pmrace/pintool> \n\
+                    PINTOOL_PATH </path/to/xfdetector/pintool> \n\
                     PM_IMAGE </path/to/pm/image> \n\
                     EXEC_PATH </path/to/executable/under/testing> \n\
                     PRE_FAILURE_COMMAND <command for pre-failure execution> \n\
@@ -524,7 +524,7 @@ string ExeCtrl::genPinCommand(int stage, string pm_image_name)
     }
 }
 
-void PMRaceFIFO::fifo_create()
+void XFDetectorFIFO::fifo_create()
 {
     // remove old FIFOs
     remove(PRE_FAILURE_FIFO);
@@ -545,7 +545,7 @@ void PMRaceFIFO::fifo_create()
     }
 }
 
-void PMRaceFIFO::fifo_open(const char* name)
+void XFDetectorFIFO::fifo_open(const char* name)
 {
     if (!strcmp(name, PRE_FAILURE_FIFO)) {
         pre_fifo_fd = open(PRE_FAILURE_FIFO, O_RDONLY);
@@ -561,7 +561,7 @@ void PMRaceFIFO::fifo_open(const char* name)
     }
 }
 
-void PMRaceFIFO::fifo_close(const char* name)
+void XFDetectorFIFO::fifo_close(const char* name)
 {
     if (!strcmp(name, PRE_FAILURE_FIFO)) {
         close(pre_fifo_fd);
@@ -574,27 +574,27 @@ void PMRaceFIFO::fifo_close(const char* name)
     }
 }
 
-int PMRaceFIFO::pre_fifo_read()
+int XFDetectorFIFO::pre_fifo_read()
 {
     return read(pre_fifo_fd, pre_fifo_buf, PIN_FIFO_BUF_SIZE);
 }
 
-int PMRaceFIFO::post_fifo_read()
+int XFDetectorFIFO::post_fifo_read()
 {
     return read(post_fifo_fd, post_fifo_buf, PIN_FIFO_BUF_SIZE);
 }
 
-int PMRaceFIFO::signal_send(char* message, unsigned len)
+int XFDetectorFIFO::signal_send(char* message, unsigned len)
 {
     return write(signal_fifo_fd, message, len);
 }
 
-int PMRaceFIFO::signal_recv()
+int XFDetectorFIFO::signal_recv()
 {
     return read(signal_fifo_fd, signal_buf, MAX_SIGNAL_LEN);
 }
 
-void PMRaceFIFO::pin_continue_send()
+void XFDetectorFIFO::pin_continue_send()
 {
     char message[] = PIN_CONTINUE_SIGNAL;
     // cerr << strlen(message) << endl;
@@ -604,7 +604,7 @@ void PMRaceFIFO::pin_continue_send()
     }        //MAP_UPDATE_INTERVAL(pm_status, tx_added_addr[tid], CONSISTENT);
 }
 
-trace_entry_t* PMRaceFIFO::get_trace(int stage, unsigned index)
+trace_entry_t* XFDetectorFIFO::get_trace(int stage, unsigned index)
 {
     if (stage == PRE_FAILURE) {
         return pre_fifo_buf + index;
@@ -615,7 +615,7 @@ trace_entry_t* PMRaceFIFO::get_trace(int stage, unsigned index)
     return NULL;
 }
 
-PMRaceFIFO::PMRaceFIFO()
+XFDetectorFIFO::XFDetectorFIFO()
 {
     // Initialize FIFOs
     fifo_create();
@@ -628,7 +628,7 @@ PMRaceFIFO::PMRaceFIFO()
     signal_buf = (char*) malloc(MAX_SIGNAL_LEN);
 }
 
-PMRaceFIFO::~PMRaceFIFO()
+XFDetectorFIFO::~XFDetectorFIFO()
 {
     // Close FIFOs
     fifo_close(PRE_FAILURE_FIFO);
@@ -639,12 +639,12 @@ PMRaceFIFO::~PMRaceFIFO()
     free(signal_buf);
 }
 
-void PMRaceDetector::check_pm_status()
+void XFDetectorDetector::check_pm_status()
 {
     // TODO:
 }
 
-void PMRaceDetector::locate_bug(trace_entry_t* bug_trace, string executable)
+void XFDetectorDetector::locate_bug(trace_entry_t* bug_trace, string executable)
 {
     assert(bug_trace && bug_trace->operation != INVALID && "Invalid trace operation");
     
@@ -677,7 +677,7 @@ bool ShadowPM::printInconsistentReadDebug(trace_entry_t* cur_trace){
     return isAddrFound;
 }
 
-void PMRaceDetector::update_pm_status(int stage, ShadowPM* shadow_mem, trace_entry_t* cur_trace)
+void XFDetectorDetector::update_pm_status(int stage, ShadowPM* shadow_mem, trace_entry_t* cur_trace)
 {
     pm_op_t operation = cur_trace->operation;
     bool func_ret = cur_trace->func_ret;
@@ -921,7 +921,7 @@ void PMRaceDetector::update_pm_status(int stage, ShadowPM* shadow_mem, trace_ent
     }
 }
 
-void PMRaceDetector::print_pm_trace(int stage, trace_entry_t* cur_trace)
+void XFDetectorDetector::print_pm_trace(int stage, trace_entry_t* cur_trace)
 {
     if (!cur_trace->func_ret) {
         DEBUG(cout << "OP: " << pm_op_name[cur_trace->operation]);
@@ -951,9 +951,9 @@ void PMRaceDetector::print_pm_trace(int stage, trace_entry_t* cur_trace)
 }
 
 ShadowPM shadow_mem;
-PMRaceDetector race_detector;
+XFDetectorDetector race_detector;
 ExeCtrl execution_controller;
-PMRaceFIFO fifo;
+XFDetectorFIFO fifo;
 
 void print_all_bugs()
 {
