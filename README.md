@@ -138,11 +138,19 @@ The detailed steps for reproducing bugs on those programs are as follows.
 ### PMDK Examples
 Use script `pmrace/run.sh` to insert bugs and run all those examples. The usage is shown as follows. The user can also run `./run.sh -h` to check this information.
 ```
-Usage: ./run.sh WORKLOAD TESTSIZE [PATCH]
+Usage: ./run.sh WORKLOAD INITSIZE TESTSIZE [PATCH]
     WORKLOAD:   The workload to test.
-    TESTSIZE:   The size of workload to test. Usually 10 will be sufficient for reproducing all bugs.
+    INITSIZE:   The number of data insertions when initializing the image that will be used in testing.
+    TESTSIZE:   The number of additional data insertions when reproducing bugs with PMRace.
     PATCH:      The name of the patch that reproduces bugs for WORKLOAD. If not specified, then we test the original program without bugs.
 ```
+For example, if we want to reproduce the `race1` bug in `btree`, running:
+```
+$ run.sh btree 0 10 race1
+```
+will apply the patch `btree_race1.patch` and run the test.
+
+For a list of all available bug patches, check folder `patch/`, the files are named in this format: `<WORKLOAD>_<PATCH>.patch`.
 
 ### Redis
 Use script `pmrace/runRedis.sh` to run Redis examples. The usage is as follows.

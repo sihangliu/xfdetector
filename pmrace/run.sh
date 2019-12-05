@@ -1,5 +1,5 @@
 #!/bin/bash
-set -x
+# set -x
 RED='\033[0;31m'
 GRN='\033[0;32m'
 NC='\033[0m' # No Color
@@ -7,10 +7,11 @@ NC='\033[0m' # No Color
 usage()
 {
     echo ""
-    echo "  Usage: ./run.sh WORKLOAD TESTSIZE [PATCH]"
+    echo "  Usage: ./run.sh WORKLOAD INITSIZE TESTSIZE [PATCH]"
     echo ""
     echo "    WORKLOAD:   The workload to test."
-    echo "    TESTSIZE:   The size of workload to test. Usually 10 will be sufficient for reproducing all bugs."
+    echo "    INITSIZE:   The number of data insertions when initializing the image that will be used in testing."
+    echo "    TESTSIZE:   The number of additional data insertions when reproducing bugs with PMRace."
     echo "    PATCH:      The name of the patch that reproduces bugs for WORKLOAD. If not specified, then we test the original program without bugs."
     echo ""
 }
@@ -22,10 +23,11 @@ fi
 
 # Workload
 WORKLOAD=$1
-# Sizes of the workloads
-TESTSIZE=$2
+# Sizes of the workloads on initialization and testing
+INITSIZE=$2
+TESTSIZE=$3
 # patchname
-PATCH=$3
+PATCH=$4
 
 # PM Image file
 PMIMAGE=/mnt/pmem0/${WORKLOAD}
@@ -35,8 +37,12 @@ TEST_ROOT=../
 TIMING_OUT=${WORKLOAD}_${TESTSIZE}_time.txt
 DEBUG_OUT=${WORKLOAD}_${TESTSIZE}_debug.txt
 
-if ! [[ $TESTSIZE =~ ^[0-9]+$ ]] ; then
-   echo -e "${RED}Error:${NC} Invalid workload size ${TESTSIZE}." >&2; usage; exit 1
+if ! [[ ${INITSIZE} =~ ^[0-9]+$ ]] ; then
+   echo -e "${RED}Error:${NC} Invalid INITSIZE ${INITSIZE}." >&2; usage; exit 1
+fi
+
+if ! [[ ${TESTSIZE} =~ ^[0-9]+$ ]] ; then
+   echo -e "${RED}Error:${NC} Invalid TESTSIZE ${TESTSIZE}." >&2; usage; exit 1
 fi
 
 if [[ ${WORKLOAD} =~ ^(btree|ctree|rbtree)$ ]]; then
@@ -57,7 +63,7 @@ else
     echo -e "${RED}Error:${NC} Invalid workload name ${WORKLOAD}." >&2; usage; exit 1
 fi
 
-echo Running ${WORKLOAD}. Test size = ${TESTSIZE}.
+echo Running ${WORKLOAD}. Init size = ${INITSIZE}. Test size = ${TESTSIZE}.
 
 # variables to use
 PMRACE_EXE=${TEST_ROOT}/pmrace/build/app/pmrace
@@ -98,8 +104,10 @@ fi
 MAX_TIMEOUT=2000
 
 # Init the pmImage
-# ${DATASTORE_EXE} ${WORKLOAD} ${PMIMAGE} ${TESTSIZE}
-${DATASTORE_EXE} ${WORKLOAD} ${PMIMAGE} 2
+if [[ ${INITSIZE} -gt 0 ]]; then
+    ${DATASTORE_EXE} ${WORKLOAD} ${PMIMAGE} ${INITSIZE}
+fi
+
 # Run realworkload
 # Start PMRace
 echo -e "${GRN}Info:${NC} We kill the post program after running some time, so don't panic if you see a process gets killed."
@@ -107,3 +115,7 @@ timeout ${MAX_TIMEOUT} ${PMRACE_EXE} ${CONFIG_FILE} > ${TIMING_OUT} 2> ${DEBUG_O
 sleep 1
 timeout ${MAX_TIMEOUT} ${PIN_EXE} -t ${PINTOOL_SO} -o pmrace.out -t 1 -f 1 -- ${DATASTORE_EXE} ${WORKLOAD} ${PMIMAGE} ${TESTSIZE} > /dev/null
 wait
+
+# print the output
+cat ${DEBUG_OUT}
+cat ${TIMING_OUT} | grep "Total-failure time"
