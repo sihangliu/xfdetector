@@ -39,10 +39,10 @@ echo "EXEC_PATH ${REDIS_SERVER}" >> ${CONFIG_FILE}
 echo "PM_IMAGE ${PMIMAGE}" >> ${CONFIG_FILE}
 echo "PRE_FAILURE_COMMAND ${REDIS_SERVER} ${TEST_ROOT}/redis-nvml/redis.conf pmfile ${PMIMAGE} 8mb" >> ${CONFIG_FILE}
 # The post-failure program should self-terminate without any input from the client.
-echo "POST_FAILURE_COMMAND ${REDIS_SERVER} ${TEST_ROOT}/redis-nvml/redis_post.conf pmfile ${PMIMAGE} 8mb & (sleep 10 ; ${REDIS_TEST_POST} ${TESTSIZE} \${RANDOM}) ; wait" >> ${CONFIG_FILE}
+echo "POST_FAILURE_COMMAND ${REDIS_SERVER} ${TEST_ROOT}/redis-nvml/redis_post.conf pmfile ${PMIMAGE} 8mb & (sleep 10 ; ${REDIS_TEST_POST} ${TESTSIZE} 7) ; wait" >> ${CONFIG_FILE}
 
 # Init the pmImage
-${REDIS_SERVER} ${TEST_ROOT}/redis-nvml/redis.conf pmfile ${PMIMAGE} 8mb & (sleep 5 ; ${REDIS_TEST} ${TESTSIZE} ${RANDOM})
+${REDIS_SERVER} ${TEST_ROOT}/redis-nvml/redis.conf pmfile ${PMIMAGE} 8mb & (sleep 5 ; ${REDIS_TEST} ${TESTSIZE} 8)
 wait
 
 # Run realworkload
@@ -51,7 +51,7 @@ ${PMRACE_EXE} ${CONFIG_FILE} > ${TIMING_OUT} 2> ${DEBUG_OUT} &
 sleep 1
 ${PIN_EXE} -t ${PINTOOL_SO} -t 1 -f 1 -- ${REDIS_SERVER} ${TEST_ROOT}/redis-nvml/redis.conf pmfile ${PMIMAGE} 8mb  &
 sleep 10
-${REDIS_TEST} ${TESTSIZE} ${RANDOM}
+${REDIS_TEST} ${TESTSIZE} 9
 wait
 
 # print the output

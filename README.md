@@ -67,6 +67,7 @@ This repository provides a Makefile that compiles both XFDetector and test workl
 ```
 $ export PIN_ROOT=<XFDetector Root>/pin-3.10
 $ export PATH=$PATH:$PIN_ROOT
+$ export PMEM_MMAP_HINT=0x10000000000
 $ make
 ```
 The tests would be runnable when `make` is done.
@@ -78,6 +79,7 @@ The followings are the detailed instructions to build XFDetector and workloads s
 ```
 $ export PIN_ROOT=<XFDetector Root>/pin-3.10
 $ export PATH=$PATH:$PIN_ROOT
+$ export PMEM_MMAP_HINT=0x10000000000
 $ cd <XFDetector Root>/xfdetector/
 $ make
 ```
