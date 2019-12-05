@@ -133,7 +133,7 @@ Tests for the following programs are available in XFDetector:
 
 We provide patches for reproducing some of the synthetic bugs that we created and reported in the paper. The scripts for applying the patches and running the buggy programs are under `pmrace/` folder.
 
-The detailed steps for reproducing bugs on those programs are as follows.
+The detailed steps for testing and reproducing bugs on those programs are as follows.
 
 ### PMDK Examples
 Use script `pmrace/run.sh` to insert bugs and run all those examples. The usage is shown as follows. The user can also run `./run.sh -h` to check this information.
@@ -144,23 +144,22 @@ Usage: ./run.sh WORKLOAD INITSIZE TESTSIZE [PATCH]
     TESTSIZE:   The number of additional data insertions when reproducing bugs with PMRace.
     PATCH:      The name of the patch that reproduces bugs for WORKLOAD. If not specified, then we test the original program without bugs.
 ```
-For example, if we want to reproduce the `race1` bug in `btree`, running:
+For example, to reproduce the `race1` bug in `btree`, we need to insert 5 elements on both initialization and testing, so we can run the following command:
 ```
-$ run.sh btree 5 5 race1
+$ ./run.sh btree 5 5 race1
 ```
-will apply the patch `btree_race1.patch` and run the test.
 
-For a list of all available bug patches, check folder `patch/`, the files are named in this format: `<WORKLOAD>_<PATCH>.patch`.
+For a complete list of all available tests and corresponding parameters that can be used to reproduce the bugs, check `runallPMDK.sh`. You can also directly run the script to run all available tests. (Not recommended, since this will take a long time)
 
 ### Redis
-Use script `pmrace/runRedis.sh` to run Redis examples. The usage is as follows.
+Use script `pmrace/runRedis.sh` to run Redis examples. The usage is shown as follows.
 ```
 Usage: ./runRedis.sh TESTSIZE
 	TESTSIZE:   The size of workload to test.
 ```
 
 ### Memcached
-Use script `pmrace/runMemcached.sh` to run Memcached examples. The usage is as follows.
+Use script `pmrace/runMemcached.sh` to run Memcached examples. The usage is shown as follows.
 ```
 Usage: ./runMemcached.sh TESTSIZE
 	TESTSIZE:   The size of workload to test.

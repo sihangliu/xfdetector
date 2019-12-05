@@ -1,5 +1,5 @@
 #!/bin/bash
-# set -x
+set -x
 RED='\033[0;31m'
 GRN='\033[0;32m'
 NC='\033[0m' # No Color
