@@ -1,5 +1,5 @@
 #!/bin/bash
-set -x
+# set -x
 
 # Workload
 WORKLOAD=memcached
@@ -52,3 +52,7 @@ ${PIN_EXE} -t ${PINTOOL_SO} -t 1 -f 1 -- ${MEMCACHED_EXE} -A -m0 -o pslab_file="
 sleep 10
 ${MEMCACHED_TEST} ${TESTSIZE}
 wait
+
+# print the output
+cat ${DEBUG_OUT}
+cat ${TIMING_OUT} | grep "Total-failure time"

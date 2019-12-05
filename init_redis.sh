@@ -16,5 +16,6 @@ fi
 # Compile with PMDK enabled
 make USE_PMDK=yes STD=-std=gnu99
 # Add config for XFDetector post-failure process
+sed -i 's/pmfile ~\/redis.pm 1gb/#pmfile ~\/redis.pm 1gb/' redis.conf
 cp redis.conf redis_post.conf
 sed -i 's/port 6379/port 6380/' redis_post.conf

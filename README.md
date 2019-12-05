@@ -121,8 +121,8 @@ $ make
 ## Testing and Reproducing Bugs
 After compiling the XFDetector suite, we can start testing and reproducing the bugs.
 
-XFDetector tested the following PM programs:
-* 5 PM program examples from PMDK:
+Tests for the following programs are available in XFDetector:
+* PMDK program examples:
 	* btree
 	* ctree
 	* rbtree
@@ -140,13 +140,13 @@ Use script `pmrace/run.sh` to insert bugs and run all those examples. The usage 
 ```
 Usage: ./run.sh WORKLOAD INITSIZE TESTSIZE [PATCH]
     WORKLOAD:   The workload to test.
-    INITSIZE:   The number of data insertions when initializing the image that will be used in testing.
+    INITSIZE:   The number of data insertions when initializing the image. This is for fast-forwarding the initialization.
     TESTSIZE:   The number of additional data insertions when reproducing bugs with PMRace.
     PATCH:      The name of the patch that reproduces bugs for WORKLOAD. If not specified, then we test the original program without bugs.
 ```
 For example, if we want to reproduce the `race1` bug in `btree`, running:
 ```
-$ run.sh btree 0 10 race1
+$ run.sh btree 5 5 race1
 ```
 will apply the patch `btree_race1.patch` and run the test.
 

@@ -10,7 +10,7 @@ usage()
     echo "  Usage: ./run.sh WORKLOAD INITSIZE TESTSIZE [PATCH]"
     echo ""
     echo "    WORKLOAD:   The workload to test."
-    echo "    INITSIZE:   The number of data insertions when initializing the image that will be used in testing."
+    echo "    INITSIZE:   The number of data insertions when initializing the image. This is for fast-forwarding the initialization."
     echo "    TESTSIZE:   The number of additional data insertions when reproducing bugs with PMRace."
     echo "    PATCH:      The name of the patch that reproduces bugs for WORKLOAD. If not specified, then we test the original program without bugs."
     echo ""
@@ -63,7 +63,7 @@ else
     echo -e "${RED}Error:${NC} Invalid workload name ${WORKLOAD}." >&2; usage; exit 1
 fi
 
-echo Running ${WORKLOAD}. Init size = ${INITSIZE}. Test size = ${TESTSIZE}.
+echo -e "${GRN}Info:${NC} Testing ${WORKLOAD}. Init size = ${INITSIZE}. Test size = ${TESTSIZE}."
 
 # variables to use
 PMRACE_EXE=${TEST_ROOT}/pmrace/build/app/pmrace
@@ -101,7 +101,7 @@ if [[ $PATCH != "" ]]; then
     patch -R ${WORKLOAD_LOC} < ${PATCH_LOC} || exit 1
 fi
 
-MAX_TIMEOUT=2000
+MAX_TIMEOUT=600
 
 # Init the pmImage
 if [[ ${INITSIZE} -gt 0 ]]; then

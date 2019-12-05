@@ -24,7 +24,7 @@ fi
 echo Running ${WORKLOAD}. Test size = ${TESTSIZE}.
 
 # Remove old pmimage and fifo files
-rm -f /mnt/pmem0/*
+#rm -f /mnt/pmem0/*
 rm /tmp/*fifo
 rm -f /tmp/func_map
 
@@ -47,9 +47,13 @@ wait
 
 # Run realworkload
 # Start PMRace
-${PMRACE_EXE} ${CONFIG_FILE} >> ${TIMING_OUT} 2> ${DEBUG_OUT} &
+${PMRACE_EXE} ${CONFIG_FILE} > ${TIMING_OUT} 2> ${DEBUG_OUT} &
 sleep 1
 ${PIN_EXE} -t ${PINTOOL_SO} -t 1 -f 1 -- ${REDIS_SERVER} ${TEST_ROOT}/redis-nvml/redis.conf pmfile ${PMIMAGE} 8mb  &
 sleep 10
 ${REDIS_TEST} ${TESTSIZE} 9
 wait
+
+# print the output
+cat ${DEBUG_OUT}
+cat ${TIMING_OUT} | grep "Total-failure time"
