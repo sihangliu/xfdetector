@@ -44,6 +44,8 @@ echo "PRE_FAILURE_COMMAND ${MEMCACHED_EXE} -A -m 0 -o pslab_file=${PMIMAGE},psla
 # The post-failure program should self-terminate without any input from the client.
 echo "POST_FAILURE_COMMAND ${MEMCACHED_EXE} -A -p 11212 -m 0 -o pslab_file=${PMIMAGE},pslab_force,pslab_recover" >> ${CONFIG_FILE}
 
+export PMEM_MMAP_HINT=0x10000000000
+
 # Init the pmImage
 ${MEMCACHED_EXE} -A -p 11211 -m 0 -o pslab_file=${PMIMAGE},pslab_force & ( sleep 1 ; ${MEMCACHED_TEST} 1)
 wait

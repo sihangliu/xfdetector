@@ -45,6 +45,8 @@ echo "PRE_FAILURE_COMMAND ${REDIS_SERVER} ${TEST_ROOT}/redis-nvml/redis.conf pmf
 # The post-failure program should self-terminate without any input from the client.
 echo "POST_FAILURE_COMMAND ${REDIS_SERVER} ${TEST_ROOT}/redis-nvml/redis_post.conf pmfile ${PMIMAGE} 8mb & (sleep 10 ; ${REDIS_TEST_POST} ${TESTSIZE} 7) ; wait" >> ${CONFIG_FILE}
 
+export PMEM_MMAP_HINT=0x10000000000
+
 # Init the pmImage
 ${REDIS_SERVER} ${TEST_ROOT}/redis-nvml/redis.conf pmfile ${PMIMAGE} 8mb & (sleep 5 ; ${REDIS_TEST} ${TESTSIZE} 8)
 wait

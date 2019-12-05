@@ -107,6 +107,8 @@ fi
 
 MAX_TIMEOUT=600
 
+export PMEM_MMAP_HINT=0x10000000000
+
 # Init the pmImage
 if [[ ${INITSIZE} -gt 0 ]]; then
     ${DATASTORE_EXE} ${WORKLOAD} ${PMIMAGE} ${INITSIZE}
