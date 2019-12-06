@@ -47,35 +47,15 @@ echo "POST_FAILURE_COMMAND ${REDIS_SERVER} ${TEST_ROOT}/redis-nvml/redis_post.co
 
 export PMEM_MMAP_HINT=0x10000000000
 
-ORIGINAL_PATCH=${TEST_ROOT}/patch/redis_xfdetector.patch
-BUGGY_PATCH=${TEST_ROOT}/patch/redis_init_bug.patch
-
-# unapply the correct patch, apply the buggy patch and recompile
-echo "Applying bug patch: redis_init_bug.patch."
-cd ${TEST_ROOT}/redis-nvml
-git apply -R ${ORIGINAL_PATCH} || exit 1
-git apply ${BUGGY_PATCH} || exit 1
-cd -
-
-echo "Recompiling workload, suppressing make output."
-make -C ${TEST_ROOT}/redis-nvml USE_PMDK=yes STD=-std=gnu99 -j > /dev/null
-
-echo "Reverting patch: redis_init_bug.patch."
-cd ${TEST_ROOT}/redis-nvml
-git apply -R ${BUGGY_PATCH} || exit 1
-git apply ${ORIGINAL_PATCH} || exit 1
-cd -
-
-MAX_TIMEOUT=120
+# Init the pmImage
+${REDIS_SERVER} ${TEST_ROOT}/redis-nvml/redis.conf pmfile ${PMIMAGE} 8mb & (sleep 5 ; ${REDIS_TEST} ${TESTSIZE} ${RANDOM})
+wait
 
 # Run realworkload
 # Start XFDetector
-(timeout ${MAX_TIMEOUT} ${PMRACE_EXE} ${CONFIG_FILE} | tee ${TIMING_OUT}) 3>&1 1>&2 2>&3 | tee ${DEBUG_OUT} &
+(${PMRACE_EXE} ${CONFIG_FILE} | tee ${TIMING_OUT}) 3>&1 1>&2 2>&3 | tee ${DEBUG_OUT} &
 sleep 1
-timeout ${MAX_TIMEOUT} ${PIN_EXE} -t ${PINTOOL_SO} -t 1 -f 1 -- ${REDIS_SERVER} ${TEST_ROOT}/redis-nvml/redis.conf pmfile ${PMIMAGE} 8mb &
+${PIN_EXE} -t ${PINTOOL_SO} -t 1 -f 1 -- ${REDIS_SERVER} ${TEST_ROOT}/redis-nvml/redis.conf pmfile ${PMIMAGE} 8mb &
 sleep 10
 ${REDIS_TEST} ${TESTSIZE} ${RANDOM}
 wait
-
-echo "Recompiling workload, suppressing make output."
-make -C ${TEST_ROOT}/redis-nvml USE_PMDK=yes STD=-std=gnu99 -j > /dev/null
