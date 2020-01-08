@@ -86,6 +86,13 @@ $ export PATH=$PATH:$PIN_ROOT
 $ cd <XFDetector Root>/xfdetector/
 $ make
 ```
+Note that if you have any missing dependencies of PMDK, you will need to install PMDK by 
+
+```
+$ cd xfdetector/pmdk
+$ sudo make install
+```
+And then continue `make` in the root directory of XFDetector.
 
 ### Build Driver Functions for PMDK Examples
 ```
