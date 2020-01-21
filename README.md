@@ -83,13 +83,13 @@ The followings are the detailed instructions to build XFDetector and workloads s
 ```
 $ export PIN_ROOT=<XFDetector Root>/pin-3.10
 $ export PATH=$PATH:$PIN_ROOT
-$ cd <XFDetector Root>/xfdetector/
+$ cd <XFDetector Root>/
 $ make
 ```
 Note that if you have any missing dependencies of PMDK, you will need to install PMDK by 
 
 ```
-$ cd xfdetector/pmdk
+$ cd <XFDetector Root>/pmdk/
 $ sudo make install
 ```
 And then continue `make` in the root directory of XFDetector.

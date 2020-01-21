@@ -50,14 +50,14 @@ if ! [[ ${TESTSIZE} =~ ^[0-9]+$ ]] ; then
 fi
 
 if [[ ${WORKLOAD} =~ ^(btree|ctree|rbtree)$ ]]; then
-    if [[ ${PATCH} != "" ]]; then
+    if [[ ${PATCH} != "" && ${PATCH} != "hash" ]]; then
         WORKLOAD_LOC=${TEST_ROOT}/pmdk/src/examples/libpmemobj/tree_map/${WORKLOAD}_map.c
         PATCH_LOC=${TEST_ROOT}/patch/${WORKLOAD}_${PATCH}.patch
         echo "Applying bug patch: ${WORKLOAD}_${PATCH}.patch."
         patch ${WORKLOAD_LOC} < ${PATCH_LOC} || exit 1
     fi
 elif [[ ${WORKLOAD} =~ ^(hashmap_atomic|hashmap_tx)$ ]]; then
-    if [[ ${PATCH} != "" ]]; then
+    if [[ ${PATCH} != "" && ${PATCH} != "hash" ]]; then
         WORKLOAD_LOC=${TEST_ROOT}/pmdk/src/examples/libpmemobj/hashmap/${WORKLOAD}.c
         PATCH_LOC=${TEST_ROOT}/patch/${WORKLOAD}_${PATCH}.patch
         echo "Applying bug patch: ${WORKLOAD}_${PATCH}.patch."
@@ -100,7 +100,7 @@ make clean -C ${TEST_ROOT}/driver > /dev/null
 make -C ${TEST_ROOT}/driver > /dev/null
 
 # unapply patch
-if [[ $PATCH != "" ]]; then
+if [[ ${PATCH} != "" && ${PATCH} != "hash" ]]; then
     echo "Reverting patch: ${WORKLOAD}_${PATCH}.patch."
     patch -R ${WORKLOAD_LOC} < ${PATCH_LOC} || exit 1
 fi

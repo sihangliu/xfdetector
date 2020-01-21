@@ -21,3 +21,4 @@
 
 # real bug
 ./run.sh hashmap_atomic 2 2
+./run.sh hashmap_atomic 0 1 hash # a dummy patch that applies our own drive function
