@@ -1,4 +1,4 @@
-## XFDetector: Cross-Failure Bug Detection in Persistent Memory Programs
+## Cross-Failure Bug Detection in Persistent Memory Programs
 
 ## Table of Contents
 * [Introduction to XFDetector](#introduction-to-xfdetector)
