@@ -1,4 +1,6 @@
 ## Cross-Failure Bug Detection in Persistent Memory Programs
+Sihang Liu, Korakit Seemakhupt, Yizhou Wei, Thomas Wenisch, Aasheesh Kolli, and Samira Khan <br/>
+The International Conference on Architectural Support for Programming Languages and Operating Systems (ASPLOS), 2020
 
 ## Table of Contents
 * [Introduction to XFDetector](#introduction-to-xfdetector)
