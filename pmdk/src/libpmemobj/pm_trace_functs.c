@@ -1,7 +1,8 @@
 #include "pm_trace_functs.h"
 
 // PM Address range manipulation
-void pm_trace_pm_addr_add(uint64_t addr, uint64_t size){
+void __attribute__ ((noinline))
+pm_trace_pm_addr_add(uint64_t addr, uint64_t size){
     return;
 }
 
@@ -10,19 +11,23 @@ void pm_trace_pm_addr_remove(uint64_t addr, uint64_t size){
 }
 
 // Transaction annotation
-void pm_trace_tx_begin(void){
+void __attribute__ ((noinline))
+pm_trace_tx_begin(void){
     return;
 }
 
-void pm_trace_tx_end(void){
+void __attribute__ ((noinline))
+pm_trace_tx_end(void){
     return;
 }
 
-void pm_trace_tx_addr_add(uint64_t addr, uint64_t size){
+void __attribute__ ((noinline))
+pm_trace_tx_addr_add(uint64_t addr, uint64_t size){
     return;
 }
 
-void tx_commit_point(void){
+void __attribute__ ((noinline))
+tx_commit_point(void){
     return;
 }
 
