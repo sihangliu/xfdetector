@@ -841,7 +841,7 @@ void XFDetectorDetector::update_pm_status(int stage, ShadowPM* shadow_mem, trace
                         }
                         shadow_mem->modify_addr(cur_trace, dst_addr, size);
                         if(non_temporal){
-                            shadow_mem->writeback_addr(cur_trace, src_addr, size);
+                            shadow_mem->writeback_addr(cur_trace, dst_addr, size);
                         }
                         shadow_mem->add_write_addr_IP_mapping(cur_trace);
                         //cerr << "WRITE: " << dst_addr << endl;
