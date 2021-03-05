@@ -55,10 +55,15 @@ std::pair<string, pm_func_t> pm_function_entries[] = {
     {"pm_trace_tx_begin", {PM_TRACE_TX_BEGIN, PM_LIBRARY_FUNC, 0, -1, -1, -1}},
     {"pm_trace_tx_end", {PM_TRACE_TX_END, PM_LIBRARY_FUNC, 0, -1, -1, -1}},
     {"pm_trace_tx_addr_add", {PM_TRACE_TX_ADDR_ADD, PM_LIBRARY_FUNC, 2, -1, 0, 1}},
+    {"pm_trace_tx_alloc", {PM_TRACE_TX_ALLOC, PM_LIBRARY_FUNC, 2, -1, 0, 1}},
 
     // writeback functions
     {"clwb", {CLWB, PM_WRITEBACK_FUNC, 2, 0, -1, 1}},
+    {"flush_clwb_nolog", {CLWB, PM_WRITEBACK_FUNC, 2, 0, -1, 1}},
+    {"flush_clflush_nolog", {CLWB, PM_WRITEBACK_FUNC, 2, 0, -1, 1}},
+    {"flush_clflushopt_nolog", {CLWB, PM_WRITEBACK_FUNC, 2, 0, -1, 1}},
     {"sfence", {SFENCE, PM_WRITEBACK_FUNC, 0, -1, -1, -1}},
+    {"predrain_memory_barrier", {SFENCE, PM_WRITEBACK_FUNC, 0, -1, -1, -1}},
     // Low-level semantics
     {"_add_commit_var", {_ADD_COMMIT_VAR, PM_LOW_LEVEL_FUNC, 2, 0, -1, 1}},
     /*
@@ -101,19 +106,21 @@ char failure_point_funcs_array[][100] = {
     "pmem_drain",
     */
     // Manually added failure point
-    "_add_failure_point",
+    // "_add_failure_point",
     // We need to add more failure points for TX.
     // Ideally, the failure point should be right before the ordering points (TX_ADD, TX_END).
     // However, we may not be able to use the same dummy function call that is used to determine
     // the boundary of the trasaction as it is not in the same location as the ordering point.
 
     // We cannot use pm_trace_tx_addr_add because we did not fix the order of function instrument.
-    "pmemobj_tx_add_common", 
+    // "pmemobj_tx_add_common", 
     
-    "pmemobj_persist",
-    "tx_commit_point",
-    "pmemobj_tx_commit"
-    // "pmemobj_tx_process"
+    // "pmemobj_persist",
+    // "tx_commit_point",
+    // "pmemobj_tx_commit"
+    // // "pmemobj_tx_process",
+    /* PMFuzz annotation */
+    "pmfuzz_inject_failure"
 };
 
 // PIN tool does not support static initialization
@@ -137,6 +144,7 @@ public:
     PINFifo();
     ~PINFifo();
 private:
+    string pin_fifo_str;
     int pinfifo_open(const char*);
     // int pmfifo_read(trace_entry_t*);
     // Pintool only writes to FIFO
@@ -185,12 +193,13 @@ int PINFifo::pinfifo_write(trace_entry_t* trace)
 void PINFifo::init(int stage)
 {
     if (stage == PRE_FAILURE) {
-        if (pinfifo_open(PRE_FAILURE_FIFO) < 0)
-            ERR("PINFifo open failed.");
+        pin_fifo_str = string("/tmp/") + PRE_FAILURE_FIFO + "." + execIDStr;
     } else if (stage == POST_FAILURE) {
-        if (pinfifo_open(POST_FAILURE_FIFO) < 0)
-            ERR("PINFifo open failed.");
+        pin_fifo_str = string("/tmp/") + POST_FAILURE_FIFO + "." + execIDStr;
     }
+    if (pinfifo_open(pin_fifo_str.c_str()) < 0)
+        ERR("PINFifo open failed.");
+
 }
 
 PINFifo::PINFifo()
@@ -205,16 +214,25 @@ PINFifo::~PINFifo()
 
 class SignalFifo {
 public:
+    void init();
     int signal_send(char*, unsigned);
     int signal_recv(char*, unsigned);
     void signalfifo_close();
     SignalFifo();
     ~SignalFifo();
 private:
+    string signal_fifo_str;
     int signalfifo_open();
     int fifo_fd;
     PIN_MUTEX fifo_lock;
 };
+
+void SignalFifo::init()
+{
+    if (signalfifo_open() < 0) {
+        ERR("PINFifo open failed.");
+    }
+}
 
 int SignalFifo::signal_send(char* message, unsigned len)
 {
@@ -243,7 +261,9 @@ int SignalFifo::signal_recv(char* buf, unsigned len)
 
 int SignalFifo::signalfifo_open()
 {
-    fifo_fd = open(SIGNAL_FIFO, O_RDWR);
+    signal_fifo_str = string("/tmp/") + SIGNAL_FIFO + "." + execIDStr;
+
+    fifo_fd = open(signal_fifo_str.c_str(), O_RDWR);
     if (fifo_fd < 0)
         ERR("SignalFifo open failed.");
 
@@ -262,9 +282,9 @@ SignalFifo::SignalFifo()
     // if (pinfifo_create() < 0) {
     //     ERR("PINFifo create failed.");
     // }
-    if (signalfifo_open() < 0) {
-        ERR("PINFifo open failed.");
-    }
+    // if (signalfifo_open() < 0) {
+    //     ERR("PINFifo open failed.");
+    // }
 }
 
 SignalFifo::~SignalFifo() 
@@ -362,55 +382,239 @@ RoITracker::RoITracker()
     PIN_MutexInit(&roi_lock);
 }
 
+/* PMFuzz: Do not need image dump any more */
+#if 1
 VOID ImageLoad(IMG img, VOID *v)
 {   
-    int line;
-    string path;
+    if (IMG_IsMainExecutable(img)) {
+        int line;
+        string path;
 
-    for (SEC sec = IMG_SecHead(img); SEC_Valid(sec); sec = SEC_Next(sec))
-    { 
-        for (RTN rtn = SEC_RtnHead(sec); RTN_Valid(rtn); rtn = RTN_Next(rtn))
-        {
-            RTN_Open(rtn);
-
-            // if (!INS_Valid(RTN_InsHead(rtn)))
-            // {
-            //     RTN_Close(rtn);
-            //     continue;
-            // }
-            // PIN_GetSourceLocation(RTN_Address(rtn), NULL, &line, &path);
-            // if (line)
-            //     fprintf(out, "%p %d %s\n", (void*)RTN_Address(rtn), line, path.c_str());
-
-            for (INS ins = RTN_InsHead(rtn); INS_Valid(ins); ins = INS_Next(ins))
+        for (SEC sec = IMG_SecHead(img); SEC_Valid(sec); sec = SEC_Next(sec))
+        { 
+            for (RTN rtn = SEC_RtnHead(sec); RTN_Valid(rtn); rtn = RTN_Next(rtn))
             {
-                if (INS_Valid(ins)) {
-                    PIN_GetSourceLocation(INS_Address(ins), NULL, &line, &path);
-                    if (line){
-                        fprintf(func_map_out, "%p %d %s\n", (void*)INS_Address(ins), line, path.c_str());
-                        // Generate trace entry
-                        trace_entry_t trace_entry;
-                        trace_entry.operation = PM_TRACE_WRITE_IP;
-                        trace_entry.func_ret = false;
-                        trace_entry.instr_ptr = (addr_t)INS_Address(ins);
-                        //fprintf(stderr, "%s\n", rtnName);
-                        assert(0!=trace_entry.operation);
-                        // Send trace entry to trace_fifo
-                        if(stage==PRE_FAILURE){
-                            ((PINFifo*)fifo_ptr)->pinfifo_write(&trace_entry);
+                RTN_Open(rtn);
+
+                // if (!INS_Valid(RTN_InsHead(rtn)))
+                // {
+                //     RTN_Close(rtn);
+                //     continue;
+                // }
+                // PIN_GetSourceLocation(RTN_Address(rtn), NULL, &line, &path);
+                // if (line)
+                //     fprintf(out, "%p %d %s\n", (void*)RTN_Address(rtn), line, path.c_str());
+
+                for (INS ins = RTN_InsHead(rtn); INS_Valid(ins); ins = INS_Next(ins))
+                {
+                    if (INS_Valid(ins)) {
+                        PIN_GetSourceLocation(INS_Address(ins), NULL, &line, &path);
+                        if (line){
+                            fprintf(func_map_out, "%p %s : %d\n", (void*)INS_Address(ins), path.c_str(), line);
+                            // Generate trace entry
+                            /*
+                            trace_entry_t trace_entry;
+                            trace_entry.operation = PM_TRACE_WRITE_IP;
+                            trace_entry.func_ret = false;
+                            trace_entry.instr_ptr = (addr_t)INS_Address(ins);
+                            //fprintf(stderr, "%s\n", rtnName);
+                            assert(0!=trace_entry.operation);
+                            // Send trace entry to trace_fifo
+                            if(stage==PRE_FAILURE){
+                                ((PINFifo*)fifo_ptr)->pinfifo_write(&trace_entry);
+                            }
+                            */
+                            //  else if(stage==POST_FAILURE && path.find("x86_64/flush.h") != std::string::npos){
+                            //     cerr << RTN_Name(rtn).c_str() << endl;
+                            // }
                         }
-                        //  else if(stage==POST_FAILURE && path.find("x86_64/flush.h") != std::string::npos){
-                        //     cerr << RTN_Name(rtn).c_str() << endl;
-                        // }
                     }
                 }
+                RTN_Close(rtn);
             }
-            RTN_Close(rtn);
         }
     }
     
 }
+#endif
 
+
+#include <tool_macros.h>
+#include <execinfo.h>
+
+// RoI management
+RoITracker roi_tracker;
+// Stage of testing
+int stage = 0;
+
+/* PMFuzz: new methods */
+VOID recordWriteInstBacktrace(const CONTEXT * ctxt, void* ip, void* addr, uint64_t size, uint64_t tid)
+{
+    // if (!roi_tracker.isInRoI(tid)) return;
+
+    if(isPmemAddr(addr, size)){
+        void* buf[128];
+        char **bt;
+
+        PIN_LockClient();
+        int nptrs = PIN_Backtrace(ctxt, buf, sizeof(buf)/sizeof(buf[0]));  
+        ASSERTX(nptrs > 0);
+        bt = backtrace_symbols(buf, nptrs);
+        PIN_UnlockClient();
+
+        ASSERTX(NULL != bt);
+
+        // Dump backtrace to file
+        fprintf(backtrace_out, ">> %p\n", ip);
+        for (int i = 0; i < nptrs; i++) {
+            string str = string(bt[i]);
+            int start = str.find("(");
+            int end = str.find(")");
+            if (start >= 0 && end >= 0) {
+                fprintf(backtrace_out, "%s\n", str.substr(start+1, end-start-1).c_str());
+            }
+        }
+        fflush(backtrace_out);
+        free(bt);
+    }
+}
+
+VOID recordReadInstBacktrace(const CONTEXT * ctxt, void* ip, void* addr, uint64_t size, uint64_t tid)
+{
+    // if (!roi_tracker.isInRoI(tid) || stage != POST_FAILURE) return;
+
+    if(isPmemAddr(addr, size)){
+        void* buf[128];
+        char **bt;
+
+        PIN_LockClient();
+        int nptrs = PIN_Backtrace(ctxt, buf, sizeof(buf)/sizeof(buf[0]));  
+        ASSERTX(nptrs > 0);
+        bt = backtrace_symbols(buf, nptrs);
+        PIN_UnlockClient();
+
+        ASSERTX(NULL != bt);
+
+        // Dump backtrace to file
+        fprintf(backtrace_out, ">> %p\n", ip);
+        for (int i = 0; i < nptrs; i++) {
+            string str = string(bt[i]);
+            int start = str.find("(");
+            int end = str.find(")");
+            if (start >= 0 && end >= 0) {
+                fprintf(backtrace_out, "%s\n", str.substr(start+1, end-start-1).c_str());
+            }
+        }
+        fflush(backtrace_out);
+        free(bt);
+    }
+}
+
+
+VOID recordFuncBacktrace(const CONTEXT * ctxt, void* ip)
+{
+    void* buf[128];
+    char **bt;
+
+    PIN_LockClient();
+    int nptrs = PIN_Backtrace(ctxt, buf, sizeof(buf)/sizeof(buf[0]));  
+    ASSERTX(nptrs > 0);
+    bt = backtrace_symbols(buf, nptrs);
+    PIN_UnlockClient();
+
+    ASSERTX(NULL != bt);
+
+    // Dump backtrace to file
+    fprintf(backtrace_out, ">> %p\n", ip);
+    for (int i = 0; i < nptrs; i++) {
+        string str = string(bt[i]);
+        int start = str.find("(");
+        int end = str.find(")");
+        if (start >= 0 && end >= 0) {
+            fprintf(backtrace_out, "%s\n", str.substr(start+1, end-start-1).c_str());
+        }
+    }
+    fflush(backtrace_out);
+    free(bt);
+}
+
+
+VOID Backtrace(IMG img, VOID *v) 
+{
+    // if (IMG_IsMainExecutable(img)) {
+
+        // Backtrace for library functions: during pre-failure
+        if (stage == PRE_FAILURE) {
+            for (auto name = pm_functions.begin(); 
+                            name != pm_functions.end(); ++name) {
+                RTN rtn = RTN_FindByName(img, C_MANGLE(name->first.c_str()));
+                if (RTN_Valid(rtn)) {
+                    RTN_Open(rtn);
+                    RTN_InsertCall(rtn, IPOINT_BEFORE, 
+                                (AFUNPTR)recordFuncBacktrace, 
+                                IARG_CONST_CONTEXT, 
+                                IARG_RETURN_IP, 
+                                IARG_END);
+                    RTN_Close(rtn);
+                }
+            }
+        }
+
+        // Backtrace for read/write instructions
+        for (SEC sec = IMG_SecHead(img); SEC_Valid(sec); sec = SEC_Next(sec)) { 
+            for (RTN rtn = SEC_RtnHead(sec); RTN_Valid(rtn); rtn = RTN_Next(rtn)) {
+                RTN_Open(rtn);
+                for (INS ins = RTN_InsHead(rtn); INS_Valid(ins); ins = INS_Next(ins)) {
+                    if (INS_Valid(ins)) {
+                        // Discard CLWB read trace
+                        UINT32 memOperands = INS_MemoryOperandCount(ins);
+
+                        // Iterate over each memory operand of the instruction.
+                        for (UINT32 memOp = 0; memOp < memOperands; memOp++) {
+
+                            // Write: during pre-failure
+                            if (stage == PRE_FAILURE && INS_MemoryOperandIsWritten(ins, memOp)) {
+                                
+                                if(INS_hasKnownMemorySize(ins)) {
+                                    INS_InsertCall(ins, IPOINT_BEFORE, 
+                                                (AFUNPTR)recordWriteInstBacktrace, 
+                                                IARG_CONST_CONTEXT, 
+                                                IARG_INST_PTR, 
+                                                IARG_MEMORYOP_EA, memOp,
+                                                IARG_MEMORYWRITE_SIZE,
+                                                IARG_THREAD_ID,
+                                                IARG_END);
+                                } else {
+                                    INS_InsertCall(ins, IPOINT_BEFORE, 
+                                                (AFUNPTR)recordWriteInstBacktrace, 
+                                                IARG_CONST_CONTEXT, 
+                                                IARG_INST_PTR, 
+                                                IARG_MEMORYOP_EA, memOp,
+                                                IARG_MULTI_MEMORYACCESS_EA,
+                                                IARG_THREAD_ID,
+                                                IARG_END);
+                                }
+                            }
+
+                            // Read: during post-failure
+                            if (stage == POST_FAILURE && INS_MemoryOperandIsRead(ins, memOp)) {
+                                INS_InsertCall(ins, IPOINT_BEFORE, 
+                                            (AFUNPTR)recordReadInstBacktrace, 
+                                            IARG_CONST_CONTEXT, 
+                                            IARG_INST_PTR, 
+                                            IARG_MEMORYOP_EA, memOp,
+                                            IARG_MEMORYREAD_SIZE,
+                                            IARG_THREAD_ID,
+                                            IARG_END);
+                            }
+                        }
+                    }
+                }
+                RTN_Close(rtn);
+            }
+        }
+    // }
+}
 
 
 #endif // PM_FUNC_HH

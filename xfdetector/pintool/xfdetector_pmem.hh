@@ -1,16 +1,6 @@
 #ifndef PMRACE_PMEM_HH
 #define PMRACE_PMEM_HH
 
-// Check whether input address is on PM
-inline bool isPmemAddr(void* addr, uint64_t size, uint64_t tid)
-{
-    // assert(roi_tracker.isInRoI(tid));
-    // return within(ival::closed((uint64_t)addr, size+((uint64_t)addr)-1), 
-                // pm_addr_set);
-    // Check if addresses are within preset range
-    return (((uint64_t)addr + size < PM_ADDR_BASE + PM_ADDR_SIZE)
-                && ((uint64_t)addr >= PM_ADDR_BASE));
-}
 
 // Print a memory read record
 void recordPmemRead(void* ip, void* addr, uint64_t size, uint64_t tid)
@@ -24,7 +14,7 @@ void recordPmemRead(void* ip, void* addr, uint64_t size, uint64_t tid)
 	if (func_status_table[tid].status == CALLED) return;
 #endif
 
-	if(isPmemAddr(addr, size, tid)){
+	if(isPmemAddr(addr, size)){
         // Trace output for debugging
 		PinDEBUG(*out << "R: " << addr 
                     << " size: " << size
@@ -47,22 +37,18 @@ void recordPmemRead(void* ip, void* addr, uint64_t size, uint64_t tid)
 // Print a memory write record
 void recordPmemWrite(void* ip, void* addr, uint64_t size, uint64_t tid, bool is_non_temporal_write)
 {
-    // FIXME: Always track writes no matter where it is
-    // Only record trace in RoI
-    // if (!roi_tracker.isInRoI(tid)) return;
-
     assert(tid < MAX_THREADS);
 
 #ifdef SKIP_FUNC_OP
 	if (func_status_table[tid].status == CALLED) return;
 #endif
 
-	if(isPmemAddr(addr, size, tid)){
+	if(isPmemAddr(addr, size)){
         // Trace output for debugging
 		PinDEBUG(*out << "W: " << addr 
                     << " size: " << size 
                     << " tid: " << tid << endl);
-        
+
         // Generate trace entry
         trace_entry_t trace_entry;
         trace_entry.tid = tid;
@@ -72,7 +58,9 @@ void recordPmemWrite(void* ip, void* addr, uint64_t size, uint64_t tid, bool is_
         trace_entry.size = size;
         trace_entry.instr_ptr = (addr_t)ip;
         trace_entry.non_temporal = is_non_temporal_write;
+
         assert(0!=trace_entry.operation);
+        assert(0!=trace_entry.dst_addr && "Cannot write address=0");
         // Send trace entry to trace_fifo
         trace_fifo.pinfifo_write(&trace_entry);
 	}
@@ -82,15 +70,8 @@ void recordPmemWrite(void* ip, void* addr, uint64_t size, uint64_t tid, bool is_
 void recordPmemWriteback(char* rtnName, void* return_ip, uint64_t tid, 
                             ADDRINT arg1, ADDRINT arg2)
 {
-    if ((strcmp(rtnName, "flush_clwb_nolog")&&
-        strcmp(rtnName, "flush_clflushopt_nolog")&&
-        strcmp(rtnName, "flush_clflush_nolog"))){
-        cerr << "Wrong sfence function. Funct name: " << rtnName <<endl;
-    }
-    // Only record trace in RoI
-    // if (!roi_tracker.isInRoI(tid)) return;
-    // This assertion is no longer true.
-    //assert(pm_functions[string(rtnName)].type == PM_WRITEBACK_FUNC);
+    if (arg2 == 0) return;
+
     assert(tid < MAX_THREADS);
     PinDEBUG(*out << "Funct: CLWB, Src: " << std::hex 
                     <<  arg1 << " Size: " << arg2 << endl);
@@ -107,6 +88,7 @@ void recordPmemWriteback(char* rtnName, void* return_ip, uint64_t tid,
     trace_entry.instr_ptr = (addr_t)return_ip;
 
     assert(0!=trace_entry.operation);
+    assert(0!=trace_entry.src_addr && "Cannot flush address=0");
     // Send trace entry to trace_fifo
     trace_fifo.pinfifo_write(&trace_entry);
 
@@ -117,7 +99,6 @@ void recordPmemFence(char* rtnName, void* return_ip, uint64_t tid)
     // Only record trace in RoI
     // if (!roi_tracker.isInRoI(tid)) return;
     // This assertion is no longer true.
-    //assert(pm_functions[string(rtnName)].type == PM_WRITEBACK_FUNC);
     if (strcmp(rtnName, "predrain_memory_barrier")){
         cerr << "Wrong sfence function. Funct name: " << rtnName <<endl;
     }
@@ -226,7 +207,6 @@ void recordPmemDeallocation(char* rtnName, void* return_ip, uint64_t tid, ADDRIN
              << " tid: " << tid << " addr: " << (void*)addr 
              << " size: " << size << endl);
     assert(tid < MAX_THREADS);
-    //assert(pm_functions[string(rtnName)].type == PM_ALLOCATION_FUNC);
 
 #ifdef SKIP_FUNC_OP
 	if (func_status_table[tid].status == CALLED) return;
@@ -426,6 +406,8 @@ void PMOpTraceInstPmem(RTN rtn, void* v)
     } else if (func_name == "flush_clwb_nolog" || 
                func_name == "flush_clflushopt_nolog" || 
                func_name == "flush_clflush_nolog") {
+            //    func_name == "pmem_flush" || 
+            //    func_name == "pmem_deep_flush") {
         // Call
         RTN_InsertCall(
             rtn, IPOINT_BEFORE,

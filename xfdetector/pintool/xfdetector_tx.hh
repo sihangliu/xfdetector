@@ -180,6 +180,33 @@ void PMOpTraceInstTX(RTN rtn, void* v)
             IARG_THREAD_ID,
             IARG_FUNCRET_EXITPOINT_VALUE,
             IARG_END);
+    } else if (func_name == "pm_trace_tx_alloc") {
+        // Instrumentation for pm_trace_tx_addr_add()
+        // Notice that the instrument function is the same as
+        // pm_trace_pm_addr_add. This is intentional.
+        // Call
+        RTN_InsertCall(
+            rtn, IPOINT_BEFORE,
+            (AFUNPTR)recordPmemAllocationTX,
+            IARG_ADDRINT,
+            RTN_Name(rtn).c_str(),
+            IARG_RETURN_IP,
+            IARG_THREAD_ID,
+            IARG_FUNCARG_ENTRYPOINT_VALUE,
+            pm_functions["pm_trace_tx_alloc"].dst,
+            IARG_FUNCARG_ENTRYPOINT_VALUE,
+            pm_functions["pm_trace_tx_alloc"].size,
+            IARG_END);
+        // Return
+        RTN_InsertCall(
+            rtn, IPOINT_AFTER, 
+            (AFUNPTR)recordPmemRetCommon, 
+            IARG_ADDRINT, 
+            RTN_Name(rtn).c_str(),
+            IARG_RETURN_IP,
+            IARG_THREAD_ID,
+            IARG_FUNCRET_EXITPOINT_VALUE,
+            IARG_END);
     } else {
         // TODO: Atomic operations
         
@@ -193,9 +220,11 @@ void PMOpTraceInstTX(RTN rtn, void* v)
 void PMDKInternalFunctHandler(char* func_name, uint64_t tid, uint32_t type)
 {
     if(type==PMDK_INTERNAL_CALL){
+        // cerr << "Calling PMDK Funct: " << func_name << " tid: " << tid << " Pre/Post: " << stage << endl;
         PinDEBUG(cerr << "Calling PMDK Funct: " << func_name 
                 << " tid: " << tid << endl;);
     }else{
+        // cerr << "Returning PMDK Funct: " << func_name << " tid: " << tid << " Pre/Post: " << stage << endl;      
         PinDEBUG(cerr << "Returning PMDK Funct: " << func_name 
                 << " tid: " << tid << endl;);
     }

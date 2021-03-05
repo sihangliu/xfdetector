@@ -9,14 +9,18 @@
 // #include <vector>
 #include <boost/icl/interval_set.hpp>
 #include <boost/icl/interval_map.hpp>
+#include <unordered_map>
 using std::cerr;
 using std::cout;
 using std::endl;
 // using std::vector;
 using std::string;
+using std::unordered_map;
 using namespace boost::icl;
 
 
+// TODO: Merge definiton with libpmfuzz
+#define MAX_FAILURE_COUNT 100000L
 
 /* ================================================================== */
 // Global variables 
@@ -24,6 +28,7 @@ using namespace boost::icl;
 // Output fd
 std::ostream * out = &cerr;
 FILE* func_map_out;
+FILE* backtrace_out;
 
 // Read tracking
 bool read_enable = false;
@@ -31,20 +36,24 @@ bool read_enable = false;
 // Auto inject failure points
 bool failure_enable = false;
 
+// List of failure points
+bool failure_list_enable = false;
+unordered_map<int, int> failure_map;
+
+// Initialize to -1
+int cur_failure_id = -1;
+
 // Send trace to FIFO
 bool fifo_enable = false;
 
 void* fifo_ptr;
 
+string execIDStr;
+
 #include "../include/common.hh"
-// Stage of testing
-int stage = PRE_FAILURE;
 
 // Pintool classes
 #include "xfdetector_pintool.hh"
-
-// RoI management
-RoITracker roi_tracker;
 
 // Skip failure controlled by passing failure skip function
 // Not thread safe, but only the selected RoI thread can access it
@@ -95,8 +104,14 @@ KNOB<string> KnobEnableRead(KNOB_MODE_WRITEONCE, "pintool",
 KNOB<string> KnobEnableFailure(KNOB_MODE_WRITEONCE, "pintool",
     "f", "", "enable auto failure injection");
 
+KNOB<string> KnobFailureListFile(KNOB_MODE_WRITEONCE, "pintool",
+    "l", "", "specify a list of failure points");
+
 KNOB<string> KnobEnableFIFO(KNOB_MODE_WRITEONCE, "pintool",
     "t", "", "enable trace fifo");
+
+KNOB<string> KnobSetExecID(KNOB_MODE_WRITEONCE, "pintool",
+    "i", "", "set execution id");
 
 /* ===================================================================== */
 // Utilities
@@ -222,8 +237,19 @@ void RoIHandler(char* func_name, uint64_t tid)
 
 void addFailurePoint(void* writeIP, char* func_name, uint64_t tid)
 {
+    // Increment failure point ID even outside the RoI
+    cur_failure_id++;
+    // cerr << "@ All Failure Point ID: " <<  cur_failure_id << endl;
+
     // Only add failure points if in RoI
     if (!roi_tracker.isInRoI(tid)) return;
+
+    // Only add fialure point if specified in failure list
+    if (failure_list_enable 
+            && failure_map.find(cur_failure_id) == failure_map.end()) {
+        return;
+    }
+    // cerr << "PIN Failure Point ID " << cur_failure_id << " Enabled" << endl;
 
     // Skip failure point on demand
     if (string(func_name) == "_skip_failure_point_begin") {
@@ -328,8 +354,30 @@ void RoISelection(RTN rtn, void* v)
 }
 
 
+void parseFailureList(string failureListFileName)
+{
+    // TODO: change map to a list
+    FILE* infile = fopen(failureListFileName.c_str(), "r");
+    int failure_id;
 
+    while (1) {
+        int out = fscanf(infile, "%d", &failure_id);
+        if (out == EOF) {
+            break;
+        } else if (out == 0) {
+            perror("Failure file incorret format");
+            abort();
+        }
+        /* Limit the number of failure points */
+        if (failure_map.size() < MAX_FAILURE_COUNT) {
+            failure_map[failure_id] = 1;
+        } else {
+            break;
+        }
+    }
 
+    fclose(infile);
+}
 
 
 int main(int argc, char *argv[])
@@ -357,23 +405,52 @@ int main(int argc, char *argv[])
     string fileName = KnobOutputFile.Value();
     string readOption = KnobEnableRead.Value();
     string failureOption = KnobEnableFailure.Value();
+    string failureListFileName = KnobFailureListFile.Value();
     string fifoOption = KnobEnableFIFO.Value();
+    execIDStr = KnobSetExecID.Value();
 
     if (!fileName.empty()) { out = new std::ofstream(fileName.c_str());}
-    if (!readOption.empty()) { read_enable = true;}
-    if (!failureOption.empty()) { failure_enable = true;}
-    if (!fifoOption.empty()) {fifo_enable = true;}
     
-    if(read_enable && !failure_enable){
+    if (!readOption.empty()) { read_enable = true;}
+    
+    if (!failureOption.empty()) { failure_enable = true;}
+    
+    if (!failureListFileName.empty()) { failure_list_enable=true;}
+    
+    if (!fifoOption.empty()) {fifo_enable = true;}
+
+    // if (!execIDStr.empty()) {execIDStr = string(".") + execIDStr;}
+
+    if (read_enable && !failure_enable) {
         stage = POST_FAILURE;
-    }else{
+    } else {
         stage = PRE_FAILURE;
     }
+
     trace_fifo.init(stage);
+    signal_fifo.init();
+
+    if (failure_enable && failure_list_enable) {
+        parseFailureList(failureListFileName);
+    }
 
     // Image instrument
-    func_map_out = fopen("/tmp/func_map", "ab");
+    func_map_out = fopen("/tmp/func_map", "w+");
     IMG_AddInstrumentFunction(ImageLoad, 0);
+    
+    if (stage == POST_FAILURE) {
+        // Post-failure
+        string backtrace_name = string("/tmp/backtrace_post.") + execIDStr;
+        backtrace_out = fopen(backtrace_name.c_str(), "w+");
+    } else if (stage == PRE_FAILURE) {
+        // Pre-failure
+        string backtrace_name = string("/tmp/backtrace_pre.") + execIDStr;
+        backtrace_out = fopen(backtrace_name.c_str(), "w+");
+    }
+    
+    if (backtrace_out) {
+        IMG_AddInstrumentFunction(Backtrace, 0);
+    }
 
     if (failure_enable) { RTN_AddInstrumentFunction(FailurePointInst, 0);}
     RTN_AddInstrumentFunction(PMDKInternalFunct, 0);
@@ -416,6 +493,11 @@ int main(int argc, char *argv[])
     // Start the program, never returns
     PIN_StartProgram();
     
+    if (stage == POST_FAILURE || 
+            stage == PRE_FAILURE) {
+        fclose(backtrace_out);
+    }
+
     return 0;
 }
 

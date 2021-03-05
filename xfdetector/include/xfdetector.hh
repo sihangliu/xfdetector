@@ -5,6 +5,8 @@
 #include "common.hh"
 #include <bits/stdc++.h> 
 #include <signal.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <pthread.h>
 #include <unordered_set>
 using std::unordered_set;
@@ -13,8 +15,65 @@ using std::unordered_set;
 #include <boost/icl/interval_set.hpp>
 #include <boost/icl/interval_map.hpp>
 #include <boost/filesystem.hpp>
+
 using namespace boost::icl;
 using namespace boost::filesystem;
+
+/* Names of PM operations for print out */
+static const char* pm_op_name[] = {
+    // Uninitialized operation
+    "invalid",
+    // PM trace flags
+    "trace_begin",
+    "trace_end",
+    "testing_end",
+    // Basic PM operations
+    "read",
+    "write",
+    "clwb",
+    "sfence",
+    // PM allocation functions
+    "pmem_map_file",
+    "pmem_unmap",
+    // PM writeback functions
+
+    // PM library functions
+    "pm_trace_pm_addr_add",
+    "pm_trace_pm_addr_remove",
+    "pm_trace_tx_begin",
+    "pm_trace_tx_end",
+    "pm_trace_tx_addr_add",
+    "pmdk_internal_call",
+    "pmdk_internal_ret",
+
+    // Low-level semantics
+    "_add_commit_var",
+    // "pm_trace_write_ip", //PMFuzz: obsolete
+    // Detection skip
+    "_skipDetectionBegin",
+    "_skipDetectionEnd",
+};
+
+/** Constant values **/
+const std::string PIN_ROOT_ENV = "PIN_ROOT";
+
+const string HELP_STR = "HELP\n"
+    "\n"
+    "  USAGE\n"
+    "    xfdetector pintool_path pm_image_name [--failure-points=path] -- target_cmd\n"
+    "\n"
+    "  REQUIRED ARGUMENTS\n"
+    "               pintool_path     Path to the pintool\n"
+    "              pm_image_name     Name of the PM image to replace in the target_cmd\n"
+    "                 target_cmd     Command to run the target program. Pool name should be replaced with __POOL_IMAGE__.\n"
+    "\n"
+    "  OPTIONAL ARGUMENTS\n"
+    "          --failure-points=     Path to the file container failure points.\n"
+    "\n"
+    "  TARGET COMMAND FORMAT\n"
+    "             __POOL_IMAGE__     Name of the pool image, this part will be automatically replaced\n";
+    
+const string POOL_IMAGE_IDENTIFIER = "__POOL_IMAGE__";
 
 template <typename Type> struct inplace_assign: 
                             public identity_based_inplace_combine<Type>
@@ -24,6 +83,18 @@ template <typename Type> struct inplace_assign:
 	void operator()(Type& A, const Type& B) const
 	{ A = B; }
 };
+
+#define MAX_BACKTRACE 10
+
+// Track pids
+static pid_t pre_failure_pid;
+static pid_t post_failure_pid;
+
+static int exec_id;
+
+#define XFD_ASSERT(cond) \
+    assert(cond)
+    //  if (!(cond)) {kill(pre_failure_pid, 9); kill(post_failure_pid, 9); assert(cond);}
 
 enum PMStatus {
     CLEAN,
@@ -48,14 +119,19 @@ typedef interval_map<addr_t, addr_t, partial_enricher, std::less,
 
 typedef interval_set<addr_t> interval_set_addr;
 typedef interval_set_addr::interval_type ival;
-std::unordered_set<addr_t> addr2ip;
+
+static std::unordered_set<addr_t> addr2ip;
+static std::vector<string> target_cmd;
 
 #define SET_INSERT(set, addr, size) \
         set.add(ival::closed(addr, size+addr-1))
+
 #define SET_REMOVE(set, addr, size) \
         set.erase(ival::closed(addr, size+addr-1))
+
 #define SET_LOOKUP(set, addr, size) \
         within(ival::closed(addr, size+addr-1), set)
+
 #define SET_CLEAR(set) \
         set.clear()
 
@@ -67,13 +143,18 @@ std::unordered_set<addr_t> addr2ip;
 
 #define MAP_REMOVE(map, addr, size) \
         (map -= (ival::closed(addr, size+addr-1)))
+
 #define MAP_LOOKUP(map, addr, size) \
         (map & ival::closed(addr, size+addr-1))
+
 #define MAP_INTERSECT(map, addr, size) \
         intersects(map, ival::closed(addr, size+addr-1))
+
 #define IN_MAP(map, addr, size) \
         within(ival::closed(addr, size+addr-1), map)
 
+#define MAP_CLEAR(map) \
+        map.clear()
 
 struct Bug_t {
     trace_entry_t op;
@@ -81,9 +162,9 @@ struct Bug_t {
 };
 
 // Trace entries that triggers a warning
-vector<Bug_t> warn_vec;
+static vector<Bug_t> warn_vec;
 // Trace entries that triggers a bug
-vector<Bug_t> error_vec;
+static vector<Bug_t> error_vec;
 
 #define WARN(op_ptr, message) {\
         Bug_t bug; \
@@ -107,7 +188,9 @@ vector<Bug_t> error_vec;
 #define PIN_TRACK_READ string("-r 1 ")
 #define PIN_ENABLE_FIFO string("-t 1 ")
 #define PIN_ENABLE_FAILURE string("-f 1 ")
-#define PIN_REDIRECT_OUT string("-o out")
+#define PIN_REDIRECT_OUT string("-o out ")
+#define PIN_SET_EXECID(val) (string("-i ") + std::to_string(val))
+#define PIN_SET_FAILURE_FILE(val) (string("-l ") + val)
 
 class ShadowPM {
 public:
@@ -131,13 +214,16 @@ public:
     void modify_addr_internal(trace_entry_t*, addr_t, size_t);
     void increment_global_time();
 
+    void reset_internal_funct_level(int tid);
     void increment_pre_internal_funct_level(int tid);
     void decrement_pre_internal_funct_level(int tid);
     bool is_in_pre_internal_funct(int tid);
 
-    void increment_tx_level(int tid);
-    void decrement_tx_level(int tid);
+    void increment_tx_level(int tid, int stage);
+    void decrement_tx_level(int tid, int stage);
     bool is_in_tx(int tid);
+
+    bool print_IP_linenumber_mapping(addr_t writeip, int stage);
 
     /* ========Checking methods======== */
     // Check if addr is guaranteed to be written back
@@ -151,7 +237,8 @@ public:
 
     bool is_added_addr(trace_entry_t*, addr_t, size_t);
     bool is_non_added_write_addr(trace_entry_t*, addr_t, size_t);
-    void add_tx_add_addr(trace_entry_t*, addr_t, size_t, int);
+    void add_tx_add_addr(trace_entry_t*, addr_t, size_t, int, bool);
+    // void add_tx_alloc_addr(trace_entry_t*, addr_t, size_t, int);
     void add_non_tx_add_addr(trace_entry_t*, addr_t, size_t);
     interval_set_addr get_tx_added_addr(int tid);
     void add_commit_var_addr(trace_entry_t* op_ptr, addr_t addr, size_t size);
@@ -186,6 +273,8 @@ private:
     int pre_InternalFunctLevel[MAX_THREADS];
     // Address set for tracking TX_ADD-ed addresses inside the transaction.
     interval_set_addr tx_added_addr[MAX_THREADS];
+    interval_map_addr_IP tx_alloc_addr_IP_mapping[MAX_THREADS];
+    interval_map_addr_IP tx_added_addr_IP_mapping[MAX_THREADS];
     // Address set for tracking non TX_ADD-ed write inside the transaction.
     // We use this to detect inconsistency caused by having TX_ADD after write.
     interval_set_addr tx_non_added_write_addr[MAX_THREADS];
@@ -206,17 +295,24 @@ private:
 
 class ExeCtrl {
 public:
-    void init(char*);
-    // void execute_pre_failure();
-    void execute_post_failure();
+    void init(int, std::vector<string>);
+    void execute_pre_failure();
+    string execute_post_failure();
     string get_executable_path() {return executable_path; }
-    void kill_proc(unsigned);
+    // void kill_proc(unsigned);
+    void term_pre_failure();
+    void term_post_failure();
+    int post_failure_status();
+    // int exec_id = -1; // Change to global
 private:
     string copy_pm_image();
-    string genPinCommand(int, string);
-    void parse_exec_command();
+    char *change_env(char *kv);
+    char** genPinCommand(int, string);
+    void parse_exec_command(std::vector<string>);
+    string rename_pool_img(string);
     string getExeName();
     string config_file;
+    string failure_point_file;
     string pintool_path;
     string executable_path;
     string pm_image_name;
@@ -226,8 +322,10 @@ private:
     string post_failure_exec_command_part1;
     string post_failure_exec_command_part2;
     // Track read in post-failure execution
-    const string pin_pre_failure_option = PIN_ENABLE_FAILURE + PIN_ENABLE_FIFO;
-    const string pin_post_failure_option = PIN_TRACK_READ + PIN_ENABLE_FIFO + PIN_REDIRECT_OUT;
+    string pin_pre_failure_option 
+        = PIN_ENABLE_FAILURE + PIN_ENABLE_FIFO; // + PIN_SET_EXECID(exec_id);
+    string pin_post_failure_option 
+        = PIN_TRACK_READ + PIN_ENABLE_FIFO + PIN_REDIRECT_OUT; // + PIN_SET_EXECID(exec_id);
 };
 
 class XFDetectorFIFO {
@@ -242,19 +340,23 @@ public:
     void clear_pre_fifo_buf() {memset(pre_fifo_buf, 0, PIN_FIFO_BUF_SIZE);}
     void clear_post_fifo_buf() {memset(post_fifo_buf, 0, PIN_FIFO_BUF_SIZE);}
 
-    XFDetectorFIFO();
+    XFDetectorFIFO(int);
     ~XFDetectorFIFO();
 
     void fifo_open(const char*);
     void fifo_close(const char*);
 
 private:
+    char pre_failure_fifo_str[1024];
+    char post_failure_fifo_str[1024];
+    char signal_fifo_str[1024];
+
     // Read/write through Signal FIFO
     int signal_send(char*, unsigned);
     int signal_recv();
 
     // Create all FIFOs
-    void fifo_create();
+    void fifo_create(int exec_id);
 
     // FIFO buffer for pre-failure trace
     trace_entry_t* pre_fifo_buf;
@@ -285,5 +387,8 @@ public:
     bool post_testing_complete = INCOMPLETE;
 private:
 };
+
+// Get existing envs
+extern char **environ;
 
 #endif

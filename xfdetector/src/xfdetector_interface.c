@@ -6,6 +6,10 @@
 #include <unistd.h>
 #include <stdlib.h>
 
+/* PMFuzz header */
+#ifdef PMFUZZ
+#include "pmfuzz.h"
+#endif
 
 __thread int trace_status = NOT_TRACING;
 __thread int xfdetector_failure_skip_status = NOT_SKIP;
@@ -149,6 +153,11 @@ void XFDetector_RoIEnd(int condition, int stage)
 
 void XFDetector_addFailurePoint(int condition)
 {
+    /* PMFuzz failure point annotation */
+#ifdef PMFUZZ
+    PMFUZZ_FAILURE_HINT
+#endif
+
     assert(has_completed == INCOMPLETE && "Error: Testing has completed already");
     if (condition) {_add_failure_point();}
 }
@@ -186,7 +195,8 @@ void XFDetector_complete(int condition, int stage)
         }
         if (cur_stage & stage) {
             has_completed = COMPLETE;
-            kill(getpid(), 9);
+            // kill(getpid(), 9);
+            exit(0);
         }
     }
 }
